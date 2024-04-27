@@ -27,15 +27,15 @@
 }
 
 # App
--keep class me.zhanghai.android.files.** implements androidx.appcompat.view.CollapsibleActionView { *; }
--keep class me.zhanghai.android.files.provider.common.ByteString { *; }
--keep class me.zhanghai.android.files.provider.linux.syscall.** { *; }
+-keep class io.esper.android.files.** implements androidx.appcompat.view.CollapsibleActionView { *; }
+-keep class io.esper.android.files.provider.common.ByteString { *; }
+-keep class io.esper.android.files.provider.linux.syscall.** { *; }
 -keepnames class * extends java.lang.Exception
 # For Class.getEnumConstants()
 -keepclassmembers enum * {
     public static **[] values();
 }
--keepnames class me.zhanghai.android.files.** implements android.os.Parcelable
+-keepnames class io.esper.android.files.** implements android.os.Parcelable
 
 # Apache FtpServer
 -keepclassmembers class * implements org.apache.mina.core.service.IoProcessor {
@@ -55,3 +55,40 @@
 
 # SMBJ-RPC
 -dontwarn java.rmi.UnmarshalException
+
+# Retrofit
+-dontwarn retrofit2.**
+-dontwarn org.codehaus.mojo.**
+-keep class retrofit2.** { *; }
+-keepattributes Signature
+-keepattributes Exceptions
+-keepattributes *Annotation*
+-keepattributes RuntimeVisibleAnnotations
+-keepattributes RuntimeInvisibleAnnotations
+-keepattributes RuntimeVisibleParameterAnnotations
+-keepattributes RuntimeInvisibleParameterAnnotations
+-keepattributes EnclosingMethod
+-keepclasseswithmembers class * {
+    @retrofit2.* <methods>;
+}
+-keepclasseswithmembers interface * {
+    @retrofit2.* <methods>;
+}
+-dontnote retrofit2.Platform
+-dontnote retrofit2.Platform$IOS$MainThreadExecutor
+-dontwarn retrofit2.Platform$Java8
+-keepattributes Signature
+-keepattributes Exceptions
+
+#GSON ----
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class sun.misc.Unsafe { *; }
+-keep class com.google.gson.examples.android.model.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+-keepclassmembers enum * { *; }
+-keep class net.mreunionlabs.wob.model.request.** { *; }
+-keep class net.mreunionlabs.wob.model.response.** { *; }
+-keep class net.mreunionlabs.wob.model.gson.** { *; }

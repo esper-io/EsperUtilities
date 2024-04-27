@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<io.esper.android.files.ui.CheckableForegroundLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/itemLayout"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/two_line_list_item_height"
+    android:foreground="?selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:id="@+id/iconLayout"
+        android:layout_width="@dimen/touch_target_size"
+        android:layout_height="@dimen/touch_target_size"
+        android:layout_marginStart="@dimen/screen_edge_margin_minus_4dp"
+        android:layout_marginEnd="@dimen/content_start_from_screen_edge_margin_minus_44dp"
+        android:clipToPadding="false"
+        android:duplicateParentState="true"
+        android:padding="@dimen/touch_target_large_icon_padding">
+
+        <io.esper.android.files.ui.DisabledAlphaImageView
+            android:id="@+id/img_item_thumbnail"
+            android:layout_width="@dimen/large_icon_size"
+            android:layout_height="@dimen/large_icon_size"
+            android:duplicateParentState="true"
+            android:scaleType="centerCrop" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:duplicateParentState="true"
+        android:orientation="vertical">
+
+        <!-- Lint says android:ellipsize="middle" and android:maxLines="1" crashes. -->
+        <TextView
+            android:id="@+id/txt_item_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textAppearance="?textAppearanceListItem" />
+
+        <io.esper.android.files.ui.AutoGoneTextView
+            android:id="@+id/txt_item_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?textAppearanceListItemSecondary"
+            android:textColor="?android:textColorSecondary" />
+    </LinearLayout>
+
+    <!--
+      ~ Cannot use android:duplicateParentState="true" because a button needs to have its own
+      ~ pressed state, etc. Necessary states will be duplicated manually in the adapter
+      ~ implementation.
+      -->
+    <me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
+        android:id="@+id/downloadBtn"
+        android:layout_width="47dp"
+        android:layout_height="@dimen/touch_target_size"
+        android:layout_marginStart="@dimen/content_start_from_screen_edge_margin_minus_36dp_considering_at_least_8dp"
+        android:layout_marginEnd="@dimen/screen_edge_margin_minus_12dp_at_least_8dp"
+        android:background="@null"
+        app:tint="?colorControlNormal">
+
+        <ImageView
+            android:id="@+id/downloadImg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:gravity="center"
+            android:padding="3dp"
+            android:src="@drawable/ic_cloud_download"
+            android:textSize="15sp"
+            app:tint="@color/activity_icon_tint"
+            tools:ignore="ContentDescription" />
+
+        <io.esper.android.files.ui.AutoGoneTextView
+            android:id="@+id/downloadTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:gravity="center"
+            android:padding="3dp"
+            android:textAppearance="?textAppearanceListItemSecondary"
+            android:textColor="?android:textColorSecondary"
+            android:textSize="18sp"
+            android:visibility="gone"
+            app:tint="?colorControlNormal" />
+
+    </me.zhanghai.android.foregroundcompat.ForegroundLinearLayout>
+</io.esper.android.files.ui.CheckableForegroundLinearLayout>

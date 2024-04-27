@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!--
-  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
-  ~ All Rights Reserved.
-  -->
-
 <resources>
 
     <string name="pref_default_value_empty" />
@@ -37,7 +32,7 @@
     <string name="pref_key_theme_color">key_theme_color</string>
     <string name="pref_default_value_theme_color">0</string>
     <string name="pref_key_material_design_3">key_material_design_3</string>
-    <bool name="pref_default_value_material_design_3">false</bool>
+    <bool name="pref_default_value_material_design_3">true</bool>
     <string name="pref_key_night_mode">key_night_mode</string>
     <string name="pref_default_value_night_mode">0</string>
     <string-array name="pref_entry_values_night_mode">
@@ -71,14 +66,14 @@
     <string name="pref_key_archive_file_name_encoding">key_archive_file_name_encoding</string>
     <string name="pref_default_value_archive_file_name_encoding">UTF-8</string>
     <string name="pref_key_open_apk_default_action">key_open_apk_default_action</string>
-    <string name="pref_default_value_open_apk_default_action">2</string>
+    <string name="pref_default_value_open_apk_default_action">0</string>
     <string-array name="pref_entry_values_open_apk_default_action">
         <item>0</item>
         <item>1</item>
         <item>2</item>
     </string-array>
     <string name="pref_key_show_pdf_thumbnail_pre_28">key_show_pdf_thumbnail_pre_28</string>
-    <bool name="pref_default_value_show_pdf_thumbnail_pre_28">false</bool>
+    <bool name="pref_default_value_show_pdf_thumbnail_pre_28">true</bool>
     <bool name="pref_visible_show_pdf_thumbnail_pre_28">true</bool>
     <string name="pref_key_read_remote_files_for_thumbnail">key_read_remote_files_for_thumbnail</string>
     <bool name="pref_default_value_read_remote_files_for_thumbnail">true</bool>

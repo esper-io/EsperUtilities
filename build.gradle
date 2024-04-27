@@ -1,10 +1,4 @@
-/*
- * Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
- * All Rights Reserved.
- */
-
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
     ext {
         kotlin_version = '1.9.22'
@@ -27,9 +21,13 @@ allprojects {
         google()
         mavenCentral()
         jcenter()
+        maven {
+            url "https://artifact.esper.io/artifactory/esper-device-sdk/"
+        }
+
     }
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }

@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!--
-  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
-  ~ All Rights Reserved.
-  -->
-
 <resources>
 
-    <string name="app_name">Material Files</string>
+    <string name="app_name">Files</string>
 
     <string name="close">Close</string>
     <string name="copy">Copy</string>
@@ -301,6 +296,7 @@
     <string name="file_list_navigate_to_title" translatable="false">@string/file_list_action_navigate_to</string>
     <string name="file_list_action_show_hidden_files">Show hidden files</string>
     <string name="file_list_action_copy_path">Copy path</string>
+    <string name="file_list_action_dlc">Dlc</string>
     <string name="file_list_action_open_in_terminal">Open in terminal</string>
     <string name="file_list_action_add_bookmark">Add bookmark</string>
     <string name="file_list_action_create_shortcut">Create shortcut</string>
@@ -794,10 +790,28 @@
     <string name="about_licenses_title">Licenses</string>
     <string name="about_privacy_policy_title">Privacy policy</string>
     <string name="about_author_title">Author</string>
-    <string name="about_author_name_title">Hai Zhang</string>
+    <string name="about_author_name_title">Esper</string>
     <string name="about_author_github_title">Follow on GitHub</string>
     <string name="about_author_twitter_title">Follow on Twitter</string>
 
     <string name="shortcut_downloads_title" translatable="false">@string/navigation_standard_directory_downloads</string>
     <string name="shortcut_ftp_server_title" translatable="false">@string/ftp_server_title</string>
+    <string name="delete_disabled">Deletion is currently restricted by the administrative policies.</string>
+    <string name="share_disabled">Sharing is currently restricted by the administrative policies.</string>
+    <string name="upload_disabled">Upload is currently restricted by the administrative policies.</string>
+    <string name="navigation_device_details">device_details</string>
+    <string name="navigation_device_details_title_unknown">Unknown</string>
+    <string name="downloadable_content">Downloadable Content</string>
+    <string name="data_not_found">Data Not Found. Try Later.</string>
+    <string name="auth_failure">Authorization Failure. Try Later.</string>
+    <string name="broken_server">Server Broken. Please Try Again Later</string>
+    <string name="network_issue">Network Issue, Try Again Later!</string>
+    <string name="download">Download</string>
+    <string name="could_not_load_data">Couldn\'t load Data. Error!</string>
+    <string name="item_thumbnail">Item thumbnail</string>
+    <string name="empty_view">No Files to Display</string>
+    <string name="sort_descending">Sorted in Descending</string>
+    <string name="sort_ascending">Sorted in Ascending</string>
+    <string name="already_downloaded">File already available at path: </string>
+    <string name="file_item_action_upload">Upload</string>
 </resources>

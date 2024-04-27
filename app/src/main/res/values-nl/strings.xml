@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!--
-  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
-  ~ All Rights Reserved.
-  -->
-
 <resources>
 
-    <string name="app_name">Material-bestanden</string>
+    <string name="app_name">Bestanden</string>
 
     <string name="close">Sluiten</string>
     <string name="copy">Kopiëren</string>

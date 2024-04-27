@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
- * All Rights Reserved.
- */
-
 package androidx.swiperefreshlayout.widget;
 
 import android.annotation.SuppressLint;
@@ -14,9 +9,10 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
-import me.zhanghai.android.files.R;
-import me.zhanghai.android.files.compat.ContextCompatKt;
-import me.zhanghai.android.files.util.ContextExtensionsKt;
+import io.esper.android.files.R;
+import io.esper.android.files.compat.ContextCompatKt;
+import io.esper.android.files.util.ContextExtensionsKt;
+import io.esper.android.files.util.ManagedConfigUtils;
 
 public class ThemedSwipeRefreshLayout extends SwipeRefreshLayout {
     public ThemedSwipeRefreshLayout(@NonNull Context context) {

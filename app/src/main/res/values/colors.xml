@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!--
-  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
-  ~ All Rights Reserved.
-  -->
-
 <resources>
 
     <color name="dark_30_percent">#4D000000</color>
@@ -46,4 +41,6 @@
     <color name="file_icon_red">#EA4335</color>
     <color name="file_icon_deep_red">#DB4437</color>
     <color name="file_icon_yellow">#F4B400</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
 </resources>

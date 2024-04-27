@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <restriction
+        android:key="app_name"
+        android:restrictionType="string"
+        android:title="Set App Name"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="show_screenshots_folder"
+        android:restrictionType="bool"
+        android:title="Show Screenshots Folder"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="deletion_allowed"
+        android:restrictionType="bool"
+        android:title="Deletion Allowed"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="kiosk_slideshow"
+        android:restrictionType="bool"
+        android:title="Enable Kiosk Slideshow"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="kiosk_slideshow_path"
+        android:restrictionType="string"
+        android:title="Set Kiosk Slideshow Path"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="kiosk_slideshow_delay"
+        android:restrictionType="integer"
+        android:title="Set Kiosk Slideshow Delay"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="kiosk_slideshow_image_strategy"
+        android:restrictionType="integer"
+        android:title="Set Kiosk Slideshow Image Rendering Strategy"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:defaultValue="*"
+        android:key="image"
+        android:restrictionType="string"
+        android:title="Allowed Image Formats"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:defaultValue="*"
+        android:key="audio_video"
+        android:restrictionType="string"
+        android:title="Allowed Audio/Video Formats"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:defaultValue="*"
+        android:key="other"
+        android:restrictionType="string"
+        android:title="Allowed Other Formats"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="inbuilt_pdf"
+        android:restrictionType="bool"
+        android:title="Use Inbuilt PDF Reader"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="inbuilt_audio_video"
+        android:restrictionType="bool"
+        android:title="Use Inbuilt Audio/Video Player"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="inbuilt_image"
+        android:restrictionType="bool"
+        android:title="Use Inbuilt Image Viewer"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="on_demand_download"
+        android:restrictionType="bool"
+        android:title="Enable On-Demand Download"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="tenant"
+        android:restrictionType="string"
+        android:title="Tenant Name"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="enterprise_id"
+        android:restrictionType="string"
+        android:title="Enterprise ID"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="api_key"
+        android:restrictionType="string"
+        android:title="API Key"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="allowed_content"
+        android:restrictionType="string"
+        android:title="Allowed Content"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="upload_content"
+        android:restrictionType="bool"
+        android:title="Enable Upload Content"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="internal_root_path"
+        android:restrictionType="string"
+        android:title="Set Internal Root Path"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="external_root_path"
+        android:restrictionType="string"
+        android:title="Set External Root Path"
+        tools:ignore="HardcodedText" />
+
+</restrictions>
