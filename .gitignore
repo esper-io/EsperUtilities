@@ -5,5 +5,6 @@
 /local.properties
 /signing.jks
 /signing.properties
+/shoonya-dpc-key.jks
 .DS_Store
 *.iml
