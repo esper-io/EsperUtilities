@@ -790,7 +790,7 @@
     <string name="about_licenses_title">Licenses</string>
     <string name="about_privacy_policy_title">Privacy policy</string>
     <string name="about_author_title">Author</string>
-    <string name="about_author_name_title">Esper</string>
+    <string name="about_author_name_title" translatable="false">Esper</string>
     <string name="about_author_github_title">Follow on GitHub</string>
     <string name="about_author_twitter_title">Follow on Twitter</string>
 
@@ -814,4 +814,5 @@
     <string name="sort_ascending">Sorted in Ascending</string>
     <string name="already_downloaded">File already available at path: </string>
     <string name="file_item_action_upload">Upload</string>
+    <string name="upload_directory_fail">Please compress and then upload the zip.</string>
 </resources>

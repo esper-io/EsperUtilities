@@ -21,51 +21,6 @@
         tools:ignore="HardcodedText" />
 
     <restriction
-        android:key="kiosk_slideshow"
-        android:restrictionType="bool"
-        android:title="Enable Kiosk Slideshow"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="kiosk_slideshow_path"
-        android:restrictionType="string"
-        android:title="Set Kiosk Slideshow Path"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="kiosk_slideshow_delay"
-        android:restrictionType="integer"
-        android:title="Set Kiosk Slideshow Delay"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="kiosk_slideshow_image_strategy"
-        android:restrictionType="integer"
-        android:title="Set Kiosk Slideshow Image Rendering Strategy"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:defaultValue="*"
-        android:key="image"
-        android:restrictionType="string"
-        android:title="Allowed Image Formats"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:defaultValue="*"
-        android:key="audio_video"
-        android:restrictionType="string"
-        android:title="Allowed Audio/Video Formats"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:defaultValue="*"
-        android:key="other"
-        android:restrictionType="string"
-        android:title="Allowed Other Formats"
-        tools:ignore="HardcodedText" />
-
-    <restriction
         android:key="inbuilt_pdf"
         android:restrictionType="bool"
         android:title="Use Inbuilt PDF Reader"
@@ -87,18 +42,6 @@
         android:key="on_demand_download"
         android:restrictionType="bool"
         android:title="Enable On-Demand Download"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="tenant"
-        android:restrictionType="string"
-        android:title="Tenant Name"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="enterprise_id"
-        android:restrictionType="string"
-        android:title="Enterprise ID"
         tools:ignore="HardcodedText" />
 
     <restriction

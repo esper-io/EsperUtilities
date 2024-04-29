@@ -76,6 +76,7 @@ import io.esper.android.files.navigation.NavigationFragment
 import io.esper.android.files.navigation.NavigationRootMapLiveData
 import io.esper.android.files.provider.archive.createArchiveRootPath
 import io.esper.android.files.provider.archive.isArchivePath
+import io.esper.android.files.provider.common.isDirectory
 import io.esper.android.files.provider.linux.isLinuxPath
 import io.esper.android.files.settings.Settings
 import io.esper.android.files.terminal.Terminal
@@ -1499,6 +1500,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
             )?.getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false) == true
         ) {
+            if (path.isDirectory()) {
+                showToast(R.string.upload_directory_fail)
+                return
+            }
             DownloadUtils.upload(path.toString(), name, requireContext(), requireActivity())
         } else {
             showToast(R.string.upload_disabled)
