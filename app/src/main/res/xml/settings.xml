@@ -5,9 +5,10 @@
 
     <PreferenceCategory android:title="@string/settings_interface_title">
 
-        <io.esper.android.files.settings.LocalePreference
-            android:key="@string/pref_key_locale"
-            android:title="@string/settings_locale_title" />
+<!--        // Todo: uncomment the following line to enable the locale (language) preference-->
+<!--        <io.esper.android.files.settings.LocalePreference-->
+<!--            android:key="@string/pref_key_locale"-->
+<!--            android:title="@string/settings_locale_title" />-->
 
         <rikka.preference.SimpleMenuPreference
             android:defaultValue="@string/pref_default_value_night_mode"

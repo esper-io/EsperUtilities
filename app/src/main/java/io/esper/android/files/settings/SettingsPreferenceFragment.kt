@@ -10,18 +10,19 @@ import io.esper.android.files.theme.night.NightModeHelper
 import io.esper.android.files.ui.PreferenceFragmentCompat
 
 class SettingsPreferenceFragment : PreferenceFragmentCompat() {
-    private lateinit var localePreference: LocalePreference
+//    private lateinit var localePreference: LocalePreference
 
     override fun onCreatePreferencesFix(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.settings)
 
-        localePreference = preferenceScreen.findPreference(getString(R.string.pref_key_locale))!!
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            localePreference.setApplicationLocalesPre33 = { locales ->
-                val activity = requireActivity() as SettingsActivity
-                activity.setApplicationLocalesPre33(locales)
-            }
-        }
+        // TODO: Uncomment this when the locale preference is implemented.
+//        localePreference = preferenceScreen.findPreference(getString(R.string.pref_key_locale))!!
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+//            localePreference.setApplicationLocalesPre33 = { locales ->
+//                val activity = requireActivity() as SettingsActivity
+//                activity.setApplicationLocalesPre33(locales)
+//            }
+//        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -62,10 +63,11 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Refresh locale preference summary because we aren't notified for an external change
-            // between system default and the locale that's the current system default.
-            localePreference.notifyChanged()
-        }
+        // TODO: Uncomment this when the locale preference is implemented.
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            // Refresh locale preference summary because we aren't notified for an external change
+//            // between system default and the locale that's the current system default.
+//            localePreference.notifyChanged()
+//        }
     }
 }
