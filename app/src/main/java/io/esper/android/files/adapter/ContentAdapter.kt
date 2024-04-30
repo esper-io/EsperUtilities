@@ -14,7 +14,6 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
@@ -30,7 +29,6 @@ import io.esper.android.files.ui.DisabledAlphaImageView
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
-import io.esper.android.files.util.showToast
 import me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
 import java.text.DecimalFormat
 import java.util.Locale
@@ -177,7 +175,13 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         } // x Bytes
 
         holder.downloadBtn.setOnClickListener {}
-        if (newItemsList?.let { containsName(it, currentItem.name) } == true) {
+        if (newItemsList?.let {
+                containsItemWithSameNameAndSize(
+                    it,
+                    currentItem.name!!,
+                    currentItem.size!!
+                )
+            } == true) {
             holder.downloadBtn.isEnabled = false
             holder.downloadImg.setImageResource(R.drawable.ic_complete)
         } else {
@@ -211,12 +215,20 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         GeneralUtils.setFadeAnimation(holder.itemView)
     }
 
-    private fun containsName(list: List<Item>, name: String?): Boolean {
-        if (name == null) {
-            return false
+    // Function to check if an item with the same name and size exists in the list
+    private fun containsItemWithSameNameAndSize(
+        itemList: List<Item>, currentItemName: String, currentItemSize: String
+    ): Boolean {
+        val matchingItems = itemList.filter { it.name == currentItemName }
+        for (item in matchingItems) {
+            Log.d("ContentAdapter", "Matching item size: ${item.size}, Current item size: $currentItemSize")
+            if (item.size == currentItemSize) {
+                return true
+            }
         }
-        return list.any { item -> item.name == name }
+        return false
     }
+
 
     override fun getItemCount(): Int {
         return mItemContentList!!.size

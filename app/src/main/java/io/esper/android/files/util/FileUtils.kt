@@ -109,6 +109,7 @@ object FileUtils {
         return file.delete()
     }
 
+
     fun populateItemList(directoryPath: String): MutableList<Item> {
         val directory = File(directoryPath)
         val mItemList: MutableList<Item> = mutableListOf()
@@ -125,7 +126,8 @@ object FileUtils {
                         path = file.parent,
                         image = null, // Set the image as needed
                         emptySubFolder = false, // Assuming no empty subfolders
-                        isDirectory = file.isDirectory
+                        isDirectory = file.isDirectory,
+                        size = file.length().toString()
                     )
                     mItemList.add(item)
                     if (file.isDirectory) {

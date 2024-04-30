@@ -11,6 +11,7 @@ class Item : Comparable<Item?> {
     private var image: String? = null
     var emptySubFolder: Boolean = false
     var isDirectory = false
+    var size: String? = null
 
     constructor()
     constructor(
@@ -20,7 +21,8 @@ class Item : Comparable<Item?> {
         path: String?,
         image: String?,
         emptySubFolder: Boolean,
-        isDirectory: Boolean
+        isDirectory: Boolean,
+        size: String
     ) {
         this.name = name
         this.data = data
@@ -29,6 +31,7 @@ class Item : Comparable<Item?> {
         this.image = image
         this.emptySubFolder = emptySubFolder
         this.isDirectory = isDirectory
+        this.size = size
     }
 
     override fun compareTo(other: Item?): Int {

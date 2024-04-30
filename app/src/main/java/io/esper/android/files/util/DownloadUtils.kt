@@ -1,5 +1,8 @@
+@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+
 package io.esper.android.files.util
 
+import android.R
 import android.annotation.SuppressLint
 import android.app.ProgressDialog
 import android.content.Context
@@ -8,6 +11,8 @@ import android.os.AsyncTask
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
+import com.downloadservice.filedownloadservice.manager.FileDownloadManager
+import io.esper.android.files.model.AllContent
 import io.esper.android.files.util.Constants.DownloadUtilsTag
 import io.esper.android.files.util.Constants.FileUtilsTag
 import net.gotev.uploadservice.UploadServiceConfig.defaultNotificationChannel
@@ -26,6 +31,66 @@ import net.lingala.zip4j.ZipFile
 import java.io.File
 
 object DownloadUtils {
+
+    fun startDownload(
+        mContext: Context, sharedPrefManaged: SharedPreferences, currentItem: AllContent
+    ) {
+        GeneralUtils.getInternalStoragePath(sharedPrefManaged)?.let { internalStoragePath ->
+            val downloadFileName = currentItem.name.toString()
+            val targetFile = File(internalStoragePath, downloadFileName)
+            if (targetFile.exists()) {
+                // If a file with the same name already exists, rename it
+                val newFileName = getUniqueFileName(internalStoragePath, downloadFileName)
+                FileDownloadManager.initDownload(
+                    mContext, currentItem.download_url.toString(), internalStoragePath, newFileName
+                )
+            } else {
+                // If the file doesn't exist, proceed with downloading without renaming
+                FileDownloadManager.initDownload(
+                    mContext,
+                    currentItem.download_url.toString(),
+                    internalStoragePath,
+                    downloadFileName
+                )
+            }
+        }
+    }
+
+    private fun getUniqueFileName(directoryPath: String, fileName: String): String {
+        val directory = File(directoryPath)
+        val extensionIndex = fileName.lastIndexOf('.')
+        val nameWithoutExtension: String
+        val extension: String
+
+        if (extensionIndex != -1) {
+            nameWithoutExtension = fileName.substring(0, extensionIndex)
+            extension = fileName.substring(extensionIndex)
+        } else {
+            nameWithoutExtension = fileName
+            extension = ""
+        }
+
+        var newName = fileName
+        var counter = 1
+
+        while (File(directory, newName).exists()) {
+            newName = if (File(directory, newName).isDirectory) {
+                // If the newName is a directory, recursively search for a unique file name
+                val subDirectory = File(directory, newName)
+                getUniqueFileName(subDirectory.absolutePath, fileName)
+            } else {
+                if (extension.isNotEmpty()) {
+                    val uniqueName = "$nameWithoutExtension($counter)$extension"
+                    counter++
+                    uniqueName
+                } else {
+                    "$nameWithoutExtension($counter)"
+                }
+            }
+        }
+
+        return newName
+    }
 
     @Suppress("NAME_SHADOWING")
     fun upload(
@@ -58,7 +123,7 @@ object DownloadUtils {
                     message = "Uploading at ${Placeholder.UploadRate} (${Placeholder.Progress})",
                     actions = arrayListOf(
                         UploadNotificationAction(
-                            icon = android.R.drawable.ic_menu_close_clear_cancel,
+                            icon = R.drawable.ic_menu_close_clear_cancel,
                             title = "Cancel",
                             intent = context.getCancelUploadIntent(uploadId)
                         )
@@ -79,7 +144,7 @@ object DownloadUtils {
             lifecycleOwner = lifecycleOwner,
             delegate = object : RequestObserverDelegate {
                 override fun onProgress(context: Context, uploadInfo: UploadInfo) {
-
+                    // Progress update
                 }
 
                 override fun onSuccess(
@@ -94,39 +159,7 @@ object DownloadUtils {
                 override fun onError(
                     context: Context, uploadInfo: UploadInfo, exception: Throwable
                 ) {
-                    when (exception) {
-                        is UserCancelledUploadException -> {
-                            Toast.makeText(
-                                context, "$fileName Upload Cancelled", Toast.LENGTH_SHORT
-                            ).show()
-                            Log.e(DownloadUtilsTag, "Error, user cancelled upload: $uploadInfo.")
-                        }
-
-                        is UploadError -> {
-                            Log.e(
-                                DownloadUtilsTag,
-                                "Error, upload error: ${exception.serverResponse.code}"
-                            )
-                            if (exception.serverResponse.code == 400) {
-                                Toast.makeText(
-                                    context,
-                                    "File Upload Failed: File with same name may exist in the server. Please rename the file and try again.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            } else {
-                                Toast.makeText(context, "File Upload Failed", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        }
-
-                        else -> {
-                            Log.e(DownloadUtilsTag, "Error: $uploadInfo", exception)
-                            Toast.makeText(context, "File Upload Failed", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    if (deleteFile) {
-                        FileUtils.deleteFile(filePath)
-                    }
+                    handleError(context, fileName, uploadInfo, exception, deleteFile, filePath)
                 }
 
                 override fun onCompleted(context: Context, uploadInfo: UploadInfo) {
@@ -143,20 +176,60 @@ object DownloadUtils {
             })
     }
 
-    @Suppress("DEPRECATION")
+    private fun handleError(
+        context: Context,
+        fileName: String,
+        uploadInfo: UploadInfo,
+        exception: Throwable,
+        deleteFile: Boolean,
+        filePath: String
+    ) {
+        when (exception) {
+            is UserCancelledUploadException -> {
+                Toast.makeText(
+                    context, "$fileName Upload Cancelled", Toast.LENGTH_SHORT
+                ).show()
+                Log.e(DownloadUtilsTag, "Error, user cancelled upload: $uploadInfo.")
+            }
+
+            is UploadError -> {
+                Log.e(
+                    DownloadUtilsTag, "Error, upload error: ${exception.serverResponse.code}"
+                )
+                if (exception.serverResponse.code == 400) {
+                    Toast.makeText(
+                        context,
+                        "File Upload Failed: File with same name may exist in the server. Please rename the file and try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(context, "File Upload Failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            else -> {
+                Log.e(DownloadUtilsTag, "Error: $uploadInfo", exception)
+                Toast.makeText(context, "File Upload Failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+        if (deleteFile) {
+            FileUtils.deleteFile(filePath)
+        }
+    }
+
     @SuppressLint("StaticFieldLeak")
     class Compress(
-        private var _ctx: Context,
-        private var _toZipFolder: String,
-        private var _zipFileName: String,
-        private var _viewLifecycleOwner: LifecycleOwner,
-        private var _sharedPrefManaged: SharedPreferences
+        private val context: Context,
+        private val toZipFolder: String,
+        private val zipFileName: String,
+        private val viewLifecycleOwner: LifecycleOwner,
+        private val sharedPrefManaged: SharedPreferences
     ) : AsyncTask<Void, Int, Boolean>() {
 
         private var progressDialog: ProgressDialog? = null
 
         override fun onPreExecute() {
-            progressDialog = ProgressDialog(_ctx)
+            progressDialog = ProgressDialog(context)
             progressDialog!!.setTitle("Zipping")
             progressDialog!!.setMessage("Please wait...")
             progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
@@ -165,20 +238,21 @@ object DownloadUtils {
         }
 
         override fun onProgressUpdate(vararg values: Int?) {
+            // Progress update
         }
 
         override fun onPostExecute(result: Boolean?) {
             progressDialog!!.dismiss()
-            val zipFilePath = GeneralUtils.getInternalStoragePath(_sharedPrefManaged)!!
+            val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)!!
             upload(
-                zipFilePath + _zipFileName, _zipFileName, _ctx, _viewLifecycleOwner, true
+                zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
             )
         }
 
         override fun doInBackground(vararg p0: Void?): Boolean {
             return try {
-                val zipFilePath = GeneralUtils.getInternalStoragePath(_sharedPrefManaged)!!
-                ZipFile(zipFilePath + _zipFileName).addFolder(File(_toZipFolder))
+                val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)!!
+                ZipFile(zipFilePath + zipFileName).addFolder(File(toZipFolder))
                 true
             } catch (ioe: Exception) {
                 Log.d(FileUtilsTag, ioe.toString())
@@ -189,21 +263,20 @@ object DownloadUtils {
         }
     }
 
-    @Suppress("DEPRECATION")
     @SuppressLint("StaticFieldLeak")
     class CompressMultipleFiles(
-        private var _ctx: Context,
-        private var _filePathsToZip: ArrayList<String>,
-        private var _zipFileName: String,
-        private var _viewLifecycleOwner: LifecycleOwner,
-        private var _sharedPrefManaged: SharedPreferences,
-        private var upload: Boolean
+        private val context: Context,
+        private val filePathsToZip: ArrayList<String>,
+        private val zipFileName: String,
+        private val viewLifecycleOwner: LifecycleOwner,
+        private val sharedPrefManaged: SharedPreferences,
+        private val upload: Boolean
     ) : AsyncTask<Void, Int, Boolean>() {
 
         private var progressDialog: ProgressDialog? = null
 
         override fun onPreExecute() {
-            progressDialog = ProgressDialog(_ctx)
+            progressDialog = ProgressDialog(context)
             progressDialog!!.setTitle("Zipping")
             progressDialog!!.setMessage("Please wait...")
             progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
@@ -212,32 +285,31 @@ object DownloadUtils {
         }
 
         override fun onProgressUpdate(vararg values: Int?) {
+            // Progress update
         }
 
         override fun onPostExecute(result: Boolean?) {
             progressDialog!!.dismiss()
-            val zipFilePath = GeneralUtils.getInternalStoragePath(_sharedPrefManaged)
+            val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
             if (upload) {
                 upload(
-                    zipFilePath + _zipFileName, _zipFileName, _ctx, _viewLifecycleOwner, true
+                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
                 )
             }
         }
 
         override fun doInBackground(vararg p0: Void?): Boolean {
             return try {
-                val zipFilePath = GeneralUtils.getInternalStoragePath(_sharedPrefManaged)
-                for (i in _filePathsToZip.indices) {
+                val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
+                for (i in filePathsToZip.indices) {
                     try {
-                        if (File(_filePathsToZip[i]).isDirectory) {
-                            ZipFile(zipFilePath + _zipFileName).addFolder(File(_filePathsToZip[i]))
+                        if (File(filePathsToZip[i]).isDirectory) {
+                            ZipFile(zipFilePath + zipFileName).addFolder(File(filePathsToZip[i]))
                         } else {
-                            ZipFile(zipFilePath + _zipFileName).addFile(File(_filePathsToZip[i]))
+                            ZipFile(zipFilePath + zipFileName).addFile(File(filePathsToZip[i]))
                         }
-                    } catch (e: java.lang.Exception) {
+                    } catch (e: Exception) {
                         Log.e(FileUtilsTag, e.message.toString())
-                    } finally {
-
                     }
                 }
                 true
