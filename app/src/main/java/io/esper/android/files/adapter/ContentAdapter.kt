@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.text.TextUtils
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,11 +14,13 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
+import com.downloadservice.filedownloadservice.manager.FileDownloadManager
 import io.esper.android.files.R
 import io.esper.android.files.compat.isSingleLineCompat
 import io.esper.android.files.model.AllContent
@@ -25,16 +28,15 @@ import io.esper.android.files.model.Item
 import io.esper.android.files.ui.AutoGoneTextView
 import io.esper.android.files.ui.DisabledAlphaImageView
 import io.esper.android.files.util.Constants
-import io.esper.android.files.util.DownloadUtils
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
+import io.esper.android.files.util.showToast
 import me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
 import java.text.DecimalFormat
 import java.util.Locale
 
 
-class ContentAdapter :
-    RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filterable {
+class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filterable {
 
     private var prevCharLength: Int = 0
     private var mContext: Context? = null
@@ -69,11 +71,12 @@ class ContentAdapter :
                 Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
             )
         }
-        showContentElement(GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)
-            ?.let { FileUtils.populateItemList(it) }, currentItem, holder)
+        showContentElement(currentItem, holder)
     }
 
-    private fun showContentElement(mItemList: MutableList<Item>?, currentItem: AllContent, holder: MyViewHolder) {
+    private fun showContentElement(currentItem: AllContent, holder: MyViewHolder) {
+        val newItemsList = GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)
+            ?.let { FileUtils.populateItemList(it) }
         when {
             currentItem.name!!.endsWith(
                 ".apk", ignoreCase = true
@@ -173,16 +176,16 @@ class ContentAdapter :
             else -> currentItem.size!! + " Bytes"
         } // x Bytes
 
-        holder.downloadBtn.isEnabled = true
-        if (mItemList?.let { containsName(it, currentItem.name) } == true) {
+        holder.downloadBtn.setOnClickListener {}
+        if (newItemsList?.let { containsName(it, currentItem.name) } == true) {
             holder.downloadBtn.isEnabled = false
             holder.downloadImg.setImageResource(R.drawable.ic_complete)
+        } else {
+            holder.downloadBtn.isEnabled = true
+            holder.downloadImg.setImageResource(R.drawable.ic_cloud_download)
         }
-
         holder.downloadBtn.setOnClickListener {
-            // Todo: Uncomment the following code block when the logic if fixed
-//            val newItemsList = GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)
-//                ?.let { it1 -> FileUtils.populateItemList(it1) }
+            // Todo: Uncomment this block to show to user that the file is already downloaded
 //            if (newItemsList?.let { it1 -> containsName(it1, currentItem.name) } == true) {
 //                Log.d("ContentAdapter", "Already downloaded")
 //                mContext?.showToast(
@@ -194,19 +197,20 @@ class ContentAdapter :
 //                )
 //                return@setOnClickListener
 //            }
-            DownloadUtils.downloadContent(
-                mContext!!,
-                sharedPrefManaged,
-                currentItem.download_url.toString(),
-                holder.downloadImg,
-                holder.downloadTxt,
-                currentItem.name.toString(),
-                currentItem.id.toInt(),
-                holder.downloadBtn
-            )
+            holder.downloadBtn.isEnabled = false
+            holder.downloadImg.setImageResource(R.drawable.ic_complete)
+            GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)?.let { it1 ->
+                FileDownloadManager.initDownload(
+                    mContext!!,
+                    currentItem.download_url.toString(),
+                    it1,
+                    currentItem.name.toString()
+                )
+            }
         }
         GeneralUtils.setFadeAnimation(holder.itemView)
     }
+
     private fun containsName(list: List<Item>, name: String?): Boolean {
         if (name == null) {
             return false
@@ -227,8 +231,6 @@ class ContentAdapter :
         var downloadBtn: ForegroundLinearLayout =
             itemView.findViewById<View>(R.id.downloadBtn) as ForegroundLinearLayout
         var downloadImg: ImageView = itemView.findViewById<View>(R.id.downloadImg) as ImageView
-        var downloadTxt: AutoGoneTextView =
-            itemView.findViewById<View>(R.id.downloadTxt) as AutoGoneTextView
 
         init {
             txtTitle.ellipsize = TextUtils.TruncateAt.MARQUEE
@@ -291,7 +293,7 @@ class ContentAdapter :
     }
 
     private lateinit var _nameEllipsize: TextUtils.TruncateAt
-    var nameEllipsize: TextUtils.TruncateAt
+    private var nameEllipsize: TextUtils.TruncateAt
         get() = _nameEllipsize
         set(value) {
             _nameEllipsize = value

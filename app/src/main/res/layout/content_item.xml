@@ -83,18 +83,5 @@
             app:tint="@color/activity_icon_tint"
             tools:ignore="ContentDescription" />
 
-        <io.esper.android.files.ui.AutoGoneTextView
-            android:id="@+id/downloadTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:gravity="center"
-            android:padding="3dp"
-            android:textAppearance="?textAppearanceListItemSecondary"
-            android:textColor="?android:textColorSecondary"
-            android:textSize="18sp"
-            android:visibility="gone"
-            app:tint="?colorControlNormal" />
-
     </me.zhanghai.android.foregroundcompat.ForegroundLinearLayout>
 </io.esper.android.files.ui.CheckableForegroundLinearLayout>

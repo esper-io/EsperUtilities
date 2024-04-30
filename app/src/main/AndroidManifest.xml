@@ -402,6 +402,8 @@
 
         <receiver android:name="io.esper.android.files.ftpserver.FtpServerReceiver" />
 
+        <service android:name="com.downloadservice.filedownloadservice.service.DownloadService"/>
+
         <meta-data
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions" />

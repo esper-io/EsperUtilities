@@ -92,3 +92,6 @@
 -keep class net.mreunionlabs.wob.model.request.** { *; }
 -keep class net.mreunionlabs.wob.model.response.** { *; }
 -keep class net.mreunionlabs.wob.model.gson.** { *; }
+
+# android-downloader
+-keep public class * implements com.ixuea.android.downloader.db.DownloadDBController
