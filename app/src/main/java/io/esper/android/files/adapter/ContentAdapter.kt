@@ -223,7 +223,7 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         for (item in matchingItems) {
             Log.d("ContentAdapter", "Matching item size: ${item.size}, Current item size: $currentItemSize")
             if (item.size == currentItemSize) {
-                return true
+                return matchingItems.any { it.size.toString() == currentItemSize }
             }
         }
         return false

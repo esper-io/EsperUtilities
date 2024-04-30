@@ -10,11 +10,13 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import api.EsperEndpoints
 import io.esper.android.files.R
@@ -25,6 +27,7 @@ import io.esper.android.files.model.AllContent
 import io.esper.android.files.model.CMItem
 import io.esper.android.files.ui.FixQueryChangeSearchView
 import io.esper.android.files.util.Constants
+import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -37,19 +40,16 @@ import java.util.concurrent.TimeUnit
 
 class DlcFragment : Fragment() {
     private var allowedContent: String? = null
-
-    private lateinit var binding: DlcFragmentBinding
-    private lateinit var menuBinding: MenuBinding
-
+    private var specificContentList: MutableList<AllContent>? = ArrayList()
     private var sharedPrefManaged: SharedPreferences? = null
     private var mContentAdapter: ContentAdapter? = null
     private var db: ContentDb? = null
-    private var specificContentList: MutableList<AllContent>? = mutableListOf()
-    private var contentList: MutableList<AllContent> = mutableListOf()
-
+    private var contentList: MutableList<AllContent> = ArrayList()
+    private var mRecyclerDialogItems: RecyclerView? = null
+    private var mEmptyDialogView: RelativeLayout? = null
+    private lateinit var menuBinding: MenuBinding
+    private lateinit var binding: DlcFragmentBinding
     private val DlcFragmentTag = "DlcFragment"
-
-    private val contentAdapter: ContentAdapter by lazy { ContentAdapter() }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -63,28 +63,35 @@ class DlcFragment : Fragment() {
         activity.title = getString(R.string.file_list_action_dlc)
         activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         setHasOptionsMenu(true)
-        init()
+        view?.let { init(it) }
     }
 
-    private fun init() {
+    private fun init(view: View) {
+        mEmptyDialogView = view.findViewById(R.id.layout_empty_view_dialog)
+        mRecyclerDialogItems = view.findViewById(R.id.recyclerView)
+
         sharedPrefManaged = requireContext().getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
+
+        mContentAdapter = ContentAdapter()
+        mRecyclerDialogItems?.adapter = mContentAdapter
+        mRecyclerDialogItems?.layoutManager = LinearLayoutManager(
+            context, LinearLayoutManager.VERTICAL, false
+        )
+
         db = context?.applicationContext?.let {
             Room.databaseBuilder(
                 it, ContentDb::class.java, "ContentDb"
             ).allowMainThreadQueries().fallbackToDestructiveMigration().build()
         }
-        binding.recyclerView.apply {
-            adapter = contentAdapter
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
+
         menuBinding = MenuBinding.inflate(menu, inflater)
-        db?.let { getDataFromDb(it) }
+        getDataFromDb(db!!)
         setUpSearchView()
     }
 
@@ -103,7 +110,15 @@ class DlcFragment : Fragment() {
 
             R.id.sort_item -> {
                 collapseSearchView()
-                toggleSortOrder()
+                if (sharedPrefManaged?.getBoolean(Constants.SORT_ASCENDING, true) == true) {
+                    Toast.makeText(context, getString(R.string.sort_descending), Toast.LENGTH_SHORT)
+                        .show()
+                    mContentAdapter?.sortItems(false)
+                } else {
+                    Toast.makeText(context, getString(R.string.sort_ascending), Toast.LENGTH_SHORT)
+                        .show()
+                    mContentAdapter?.sortItems(true)
+                }
                 true
             }
 
@@ -116,16 +131,24 @@ class DlcFragment : Fragment() {
         // SearchView.OnCloseListener.onClose() is not always called.
         menuBinding.searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
+
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                contentAdapter.filter.filter("")
+                mContentAdapter?.filter?.filter("")
                 return true
             }
         })
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String): Boolean = true
-            override fun onQueryTextChange(query: String): Boolean {
-                contentAdapter.filter.filter(query)
+            override fun onQueryTextSubmit(query: String): Boolean {
+                GeneralUtils.hideKeyboard(requireActivity())
                 return true
+            }
+
+            override fun onQueryTextChange(query: String): Boolean {
+                if (searchView.shouldIgnoreQueryChange) {
+                    return false
+                }
+                mContentAdapter?.filter?.filter(query)
+                return false
             }
         })
     }
@@ -281,7 +304,8 @@ class DlcFragment : Fragment() {
         if (db.contentDao().getAllContent().isNotEmpty()) {
             if (allowedContent.isNullOrEmpty() || allowedContent.equals("[]")) {
                 Log.d(
-                    DlcFragmentTag, "$methodDlcFragmentTag: All Content Allowed: size: ${
+                    DlcFragmentTag,
+                    "$methodDlcFragmentTag: All Content Allowed: size: ${
                         db.contentDao().getAllContent().size
                     }"
                 )
@@ -325,13 +349,6 @@ class DlcFragment : Fragment() {
         }
     }
 
-    private fun toggleSortOrder() {
-        val ascending = sharedPrefManaged?.getBoolean(Constants.SORT_ASCENDING, true) == true
-        contentAdapter.sortItems(!ascending)
-        val messageRes = if (ascending) R.string.sort_descending else R.string.sort_ascending
-        Toast.makeText(context, getString(messageRes), Toast.LENGTH_SHORT).show()
-    }
-
     override fun onStop() {
         db?.close()
         GeneralUtils.hideKeyboard(requireActivity())
@@ -373,10 +390,10 @@ class DlcFragment : Fragment() {
     }
 
     fun setEmptyViewVisibility(visibility: Int) {
-        binding.layoutEmptyViewDialog.visibility = visibility
+        mEmptyDialogView?.visibility = visibility
     }
 
     fun setRecyclerViewVisibility(visibility: Int) {
-        binding.recyclerView.visibility = visibility
+        mRecyclerDialogItems?.visibility = visibility
     }
 }
