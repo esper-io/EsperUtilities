@@ -207,8 +207,7 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
                 if (password.isEmpty()) {
                     wrongPasswordEntered++
                     showPasswordDialog(
-                        context,
-                        showError = "Password cannot be empty. Please try again."
+                        context, showError = "Password cannot be empty. Please try again."
                     )
                 } else {
                     loadPdf(password)
