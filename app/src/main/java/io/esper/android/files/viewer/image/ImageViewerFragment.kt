@@ -96,7 +96,6 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         }
         // This will set up window flags.
         systemUiHelper.show()
-        systemUiHelper.delayHide(5000)
         adapter = ImageViewerAdapter(viewLifecycleOwner) { systemUiHelper.toggle() }.apply {
             replace(paths)
         }

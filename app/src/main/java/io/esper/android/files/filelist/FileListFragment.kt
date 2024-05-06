@@ -1395,7 +1395,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         for (index in 0..<adapter.itemCount) {
             val file = adapter.getItem(index)
             val filePath = file.path
-            if (file.mimeType.isImage || filePath == path) {
+            if (filePath == path) {
                 paths.add(filePath)
             }
         }
@@ -1404,11 +1404,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         // HACK: Don't send too many paths to avoid TransactionTooLargeException.
-        if (paths.size > IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
-            val start = (position - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
-                0, paths.size - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
+        if (paths.size > PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
+            val start = (position - PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
+                0, paths.size - PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
             )
-            paths = paths.subList(start, start + IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
+            paths = paths.subList(start, start + PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
             position -= start
         }
         PdfViewerActivity.putExtras(intent, paths, position)
@@ -1801,6 +1801,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             "io.esper.android.files.intent.action.VIEW_DOWNLOADS"
 
         private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
+        private const val PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {
