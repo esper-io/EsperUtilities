@@ -96,6 +96,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         }
         // This will set up window flags.
         systemUiHelper.show()
+        systemUiHelper.delayHide(5000)
         adapter = ImageViewerAdapter(viewLifecycleOwner) { systemUiHelper.toggle() }.apply {
             replace(paths)
         }
@@ -132,24 +133,24 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         outState.putState(State(paths))
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
+//    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+//        super.onCreateOptionsMenu(menu, inflater)
+//
+//        inflater.inflate(R.menu.image_viewer, menu)
+//    }
 
-        inflater.inflate(R.menu.image_viewer, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId) {
-            R.id.action_delete -> {
-                confirmDelete()
-                true
-            }
-            R.id.action_share -> {
-                share()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+//        when (item.itemId) {
+//            R.id.action_delete -> {
+//                confirmDelete()
+//                true
+//            }
+//            R.id.action_share -> {
+//                share()
+//                true
+//            }
+//            else -> super.onOptionsItemSelected(item)
+//        }
 
     private fun confirmDelete() {
         ConfirmDeleteDialogFragment.show(currentPath, this)

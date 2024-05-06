@@ -215,4 +215,5 @@ dependencies {
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
     implementation 'com.github.naumanmir:filedownloadservice:1.2'
     implementation 'com.ixuea:android-downloader:3.0.1'
+    implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
 }

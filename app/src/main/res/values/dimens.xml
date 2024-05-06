@@ -46,4 +46,7 @@
     <!-- Reduce fast scroll thumb touch target size because we have the popup menu beside it. -->
     <dimen name="afs_min_touch_target_size">24dp</dimen>
     <dimen name="demo_sheet_rounded_corner">16dp</dimen>
+
+    <dimen name="password_input_margin">16dp</dimen>
+    <dimen name="checkbox_margin">16dp</dimen>
 </resources>

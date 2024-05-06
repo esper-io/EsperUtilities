@@ -66,6 +66,7 @@ import io.esper.android.files.file.extension
 import io.esper.android.files.file.fileProviderUri
 import io.esper.android.files.file.isApk
 import io.esper.android.files.file.isImage
+import io.esper.android.files.file.isPdf
 import io.esper.android.files.filejob.FileJobService
 import io.esper.android.files.filelist.FileSortOptions.By
 import io.esper.android.files.filelist.FileSortOptions.Order
@@ -1340,6 +1341,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION).apply {
                     extraPath = path
                     maybeAddImageViewerActivityExtras(this, path, mimeType)
+                    maybeAddPdfViewerActivityExtras(this, path, mimeType)
                 }.let {
                     if (withChooser) {
                         it.withChooser(
@@ -1382,6 +1384,34 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             position -= start
         }
         ImageViewerActivity.putExtras(intent, paths, position)
+    }
+
+    private fun maybeAddPdfViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {
+        if (!mimeType.isPdf) {
+            return
+        }
+        var paths = mutableListOf<Path>()
+        // We need the ordered list from our adapter instead of the list from FileListLiveData.
+        for (index in 0..<adapter.itemCount) {
+            val file = adapter.getItem(index)
+            val filePath = file.path
+            if (file.mimeType.isImage || filePath == path) {
+                paths.add(filePath)
+            }
+        }
+        var position = paths.indexOf(path)
+        if (position == -1) {
+            return
+        }
+        // HACK: Don't send too many paths to avoid TransactionTooLargeException.
+        if (paths.size > IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
+            val start = (position - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
+                0, paths.size - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
+            )
+            paths = paths.subList(start, start + IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
+            position -= start
+        }
+        PdfViewerActivity.putExtras(intent, paths, position)
     }
 
     override fun cutFile(file: FileItem) {
