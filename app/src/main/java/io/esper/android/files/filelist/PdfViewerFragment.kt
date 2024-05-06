@@ -13,11 +13,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.marginLeft
 import androidx.fragment.app.Fragment
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.github.barteksc.pdfviewer.PDFView
@@ -27,7 +25,6 @@ import com.github.barteksc.pdfviewer.listener.OnPageErrorListener
 import com.github.barteksc.pdfviewer.listener.OnTapListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textview.MaterialTextView
 import com.shockwave.pdfium.PdfDocument
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
 import io.esper.android.files.R
@@ -51,6 +48,7 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
     private lateinit var systemUiHelper: SystemUiHelper
     private val argsPaths by lazy { args.intent.extraPathList }
     val activity: AppCompatActivity by lazy { requireActivity() as AppCompatActivity }
+    private var wrongPasswordEntered = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -80,7 +78,6 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
         }
         // This will set up window flags.
         systemUiHelper.show()
-        systemUiHelper.delayHide(5000)
         loadPdf()
     }
 
@@ -98,6 +95,8 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
     }
 
     override fun loadComplete(nbPages: Int) {
+        wrongPasswordEntered = 0
+        systemUiHelper.delayHide(5000)
         var title = File(argsPaths[0].toString()).name
         try {
             val meta: PdfDocument.Meta = pdfView!!.getDocumentMeta()
@@ -124,13 +123,20 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
 
     override fun onError(t: Throwable?) {
         if (t != null && t.message?.contains("Password required or incorrect password") == true) {
-            showPasswordDialog(requireContext())
+            if (wrongPasswordEntered > 0) {
+                // If wrong password was previously entered, show error message
+                showPasswordDialog(
+                    requireContext(), showError = "Incorrect password. Please try again."
+                )
+            } else {
+                // Otherwise, show password dialog without error message
+                wrongPasswordEntered++
+                showPasswordDialog(requireContext())
+            }
         } else {
             Log.e(PdfViewerFragmentTag, "Cannot load PDF, throwable: $t")
             Toast.makeText(
-                requireContext(),
-                "Cannot load PDF, Maybe Corrupted!",
-                Toast.LENGTH_SHORT
+                requireContext(), "Cannot load PDF, Maybe Corrupted!", Toast.LENGTH_SHORT
             ).show()
         }
     }
@@ -141,9 +147,13 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
         return true
     }
 
-    private fun showPasswordDialog(context: Context) {
+    private fun showPasswordDialog(context: Context, showError: String? = null) {
+        if (wrongPasswordEntered > 3) {
+            finish()
+        }
         val passwordInput = TextInputEditText(context)
-        passwordInput.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        passwordInput.inputType =
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
 
         val showPasswordCheckBox = CheckBox(context)
         showPasswordCheckBox.text = resources.getString(R.string.show_password)
@@ -151,22 +161,31 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
             val cursorPosition = passwordInput.selectionStart // Save cursor position
             if (isChecked) {
                 // Show password
-                passwordInput.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                passwordInput.inputType =
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             } else {
                 // Hide password
-                passwordInput.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                passwordInput.inputType =
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             }
             passwordInput.setSelection(cursorPosition) // Restore cursor position
         }
 
         // Set margins for password input field
-        val passwordInputParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        val passwordInputMarginInPixels = resources.getDimensionPixelSize(R.dimen.password_input_margin)
-        passwordInputParams.setMargins(passwordInputMarginInPixels, 0, passwordInputMarginInPixels, 0)
+        val passwordInputParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        val passwordInputMarginInPixels =
+            resources.getDimensionPixelSize(R.dimen.password_input_margin)
+        passwordInputParams.setMargins(
+            passwordInputMarginInPixels, 0, passwordInputMarginInPixels, 0
+        )
         passwordInput.layoutParams = passwordInputParams
 
         // Set margins for checkbox
-        val checkBoxParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        val checkBoxParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        )
         val checkBoxMarginInPixels = resources.getDimensionPixelSize(R.dimen.checkbox_margin)
         checkBoxParams.setMargins(checkBoxMarginInPixels, 0, 0, 0)
         showPasswordCheckBox.layoutParams = checkBoxParams
@@ -176,19 +195,33 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
         container.addView(passwordInput)
         container.addView(showPasswordCheckBox)
 
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Password Protected Document")
-            .setMessage("This document is password protected. Please enter the password to view it.")
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+        val dialogBuilder =
+            MaterialAlertDialogBuilder(context).setTitle("Password Protected Document").setMessage(
+                if (showError.isNullOrEmpty()) {
+                    "This document is password protected. Please enter the password to view it."
+                } else {
+                    showError
+                }
+            ).setView(container).setPositiveButton(android.R.string.ok) { _, _ ->
                 val password = passwordInput.text.toString()
-                loadPdf(password)
-            }
-            .setNegativeButton(android.R.string.cancel) { dialog, _ ->
+                if (password.isEmpty()) {
+                    wrongPasswordEntered++
+                    showPasswordDialog(
+                        context,
+                        showError = "Password cannot be empty. Please try again."
+                    )
+                } else {
+                    loadPdf(password)
+                }
+            }.setNegativeButton(android.R.string.cancel) { dialog, _ ->
                 dialog.dismiss()
                 finish()
-            }
-            .setCancelable(false)
-            .show()
+            }.setCancelable(false)
+
+        if (!showError.isNullOrEmpty()) {
+            dialogBuilder.setIcon(android.R.drawable.ic_dialog_alert)
+        }
+
+        dialogBuilder.show()
     }
 }

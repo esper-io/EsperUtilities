@@ -95,3 +95,6 @@
 
 # android-downloader
 -keep public class * implements com.ixuea.android.downloader.db.DownloadDBController
+
+# pdf-viewer
+-keep class com.shockwave.**
