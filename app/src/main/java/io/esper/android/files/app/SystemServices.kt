@@ -15,7 +15,7 @@ import io.esper.android.files.compat.mainExecutorCompat
 import okhttp3.OkHttpClient
 import java.util.concurrent.Executor
 
-val appClassLoader = AppProvider::class.java.classLoader
+val appClassLoader: ClassLoader = AppProvider::class.java.classLoader
 
 val clipboardManager: ClipboardManager by lazy {
     application.getSystemServiceCompat(ClipboardManager::class.java)

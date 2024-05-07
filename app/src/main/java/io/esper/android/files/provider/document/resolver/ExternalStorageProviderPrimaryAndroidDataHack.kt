@@ -19,10 +19,10 @@ object ExternalStorageProviderHacks {
     private val TREE_URI_PRIMARY_ANDROID = DocumentsContract.buildTreeDocumentUri(
         DocumentsContractCompat.EXTERNAL_STORAGE_PROVIDER_AUTHORITY, DOCUMENT_ID_PRIMARY
     )
-    val DOCUMENT_URI_ANDROID_DATA = DocumentsContract.buildDocumentUriUsingTree(
+    val DOCUMENT_URI_ANDROID_DATA: Uri = DocumentsContract.buildDocumentUriUsingTree(
         TREE_URI_PRIMARY_ANDROID, DOCUMENT_ID_PRIMARY_ANDROID_DATA
     )
-    val DOCUMENT_URI_ANDROID_OBB = DocumentsContract.buildDocumentUriUsingTree(
+    val DOCUMENT_URI_ANDROID_OBB: Uri = DocumentsContract.buildDocumentUriUsingTree(
         TREE_URI_PRIMARY_ANDROID, DOCUMENT_ID_PRIMARY_ANDROID_OBB
     )
 
