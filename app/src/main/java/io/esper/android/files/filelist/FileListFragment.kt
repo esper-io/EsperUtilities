@@ -95,7 +95,7 @@ import io.esper.android.files.ui.ThemedFastScroller
 import io.esper.android.files.ui.ToolbarActionMode
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.DebouncedRunnable
-import io.esper.android.files.util.DownloadUtils
+import io.esper.android.files.util.UploadDownloadUtils
 import io.esper.android.files.util.Failure
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
@@ -1485,10 +1485,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             )?.getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false) == true
         ) {
             val path = currentPath
-            DownloadUtils.Compress(
-                context, path.toString(), sharedPrefManaged.getString(
-                    Constants.ESPER_DEVICE_NAME, null
-                )!! + "-${GeneralUtils.getCurrentDateTime()}.zip", this, sharedPrefManaged
+            UploadDownloadUtils.Compress(
+                context, path.toString(), GeneralUtils.getDeviceNameFromPrefs(context) + "-${GeneralUtils.getCurrentDateTime()}.zip", this, sharedPrefManaged
             ).execute()
         } else {
             showToast(R.string.upload_disabled)
@@ -1508,12 +1506,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 filePathsToZip.add(fileItem.path.toString())
             }
             // Pass filePathsToZip to CompressMultipleFiles method
-            DownloadUtils.CompressMultipleFiles(
+            UploadDownloadUtils.CompressMultipleFiles(
                 context,
                 filePathsToZip,
-                sharedPrefManaged.getString(
-                    Constants.ESPER_DEVICE_NAME, null
-                )!! + "-${GeneralUtils.getCurrentDateTime()}.zip",
+                GeneralUtils.getDeviceNameFromPrefs(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
                 requireActivity(),
                 sharedPrefManaged,
                 true
@@ -1534,7 +1530,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 showToast(R.string.upload_directory_fail)
                 return
             }
-            DownloadUtils.upload(path.toString(), name, requireContext(), requireActivity())
+            UploadDownloadUtils.upload(path.toString(), name, requireContext(), requireActivity())
         } else {
             showToast(R.string.upload_disabled)
             return

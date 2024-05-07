@@ -50,7 +50,10 @@ object ManagedConfigUtils {
 
         val restrictionsReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values (Receiver Triggered)")
+                Log.i(
+                    Constants.ManagedConfigUtilsTag,
+                    "Getting Managed Config Values (Receiver Triggered)"
+                )
                 val appRestrictions = myRestrictionsMgr.applicationRestrictions
                 mainFunction(appRestrictions, context, sharedPrefManaged, false)
             }
@@ -85,12 +88,14 @@ object ManagedConfigUtils {
             creationAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val addStorageChange = addStorageManagedConfig(context, appRestrictions, sharedPrefManaged)
         val ftpAllowedChange = ftpAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val showDeviceDetails =
+            showDeviceDetailsManagedConfig(context, appRestrictions, sharedPrefManaged)
 
-        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || onDemandDownloadChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange || addStorageChange || ftpAllowedChange) {
+        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails) {
             if (!apiKeyChange) {
                 Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
@@ -105,12 +110,14 @@ object ManagedConfigUtils {
 
     @JvmStatic
     fun getManagedConfigValues(
-        context: Context,
-        wasIsItAForceRefresh: Boolean = false
+        context: Context, wasIsItAForceRefresh: Boolean = false
     ) {
         Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values (Manually Triggered)")
         var restrictionsBundle: Bundle?
-        val sharedPrefManaged = context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
+        val sharedPrefManaged = context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES,
+            Context.MODE_PRIVATE
+        )
         val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
         restrictionsBundle = userManager.getApplicationRestrictions(context.packageName)
         if (restrictionsBundle == null) {
@@ -378,6 +385,27 @@ object ManagedConfigUtils {
                 .apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "FTP Allowed Changed")
+        }
+        return result
+    }
+
+    private fun showDeviceDetailsManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val showDeviceDetails =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS
+            ) else false
+        val changeInValue = showDeviceDetails != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, showDeviceDetails)
+                .apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Show Device Details Allowed Changed")
         }
         return result
     }

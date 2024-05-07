@@ -27,7 +27,6 @@ import io.esper.android.files.model.AllContent
 import io.esper.android.files.model.CMItem
 import io.esper.android.files.ui.FixQueryChangeSearchView
 import io.esper.android.files.util.Constants
-import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -170,7 +169,7 @@ class DlcFragment : Fragment() {
                 .readTimeout(30, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS)
                 .cache(myCache1).addInterceptor { chain ->
                     var request = chain.request()
-                    val hasNetwork = context?.let { GeneralUtils.hasNetwork(it) } == true
+                    val hasNetwork = context?.let { GeneralUtils.hasActiveInternetConnection(it) } == true
                     request = if (hasNetwork) {
                         request.newBuilder().header("Cache-Control", "public, max-age=" + 5).build()
                     } else {

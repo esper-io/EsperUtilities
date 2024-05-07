@@ -13,8 +13,8 @@ import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
 import com.downloadservice.filedownloadservice.manager.FileDownloadManager
 import io.esper.android.files.model.AllContent
-import io.esper.android.files.util.Constants.DownloadUtilsTag
 import io.esper.android.files.util.Constants.FileUtilsTag
+import io.esper.android.files.util.Constants.UploadDownloadUtilsTag
 import net.gotev.uploadservice.UploadServiceConfig.defaultNotificationChannel
 import net.gotev.uploadservice.data.UploadInfo
 import net.gotev.uploadservice.data.UploadNotificationAction
@@ -30,11 +30,15 @@ import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest
 import net.lingala.zip4j.ZipFile
 import java.io.File
 
-object DownloadUtils {
+object UploadDownloadUtils {
 
     fun startDownload(
-        mContext: Context, sharedPrefManaged: SharedPreferences, currentItem: AllContent
+        mContext: Context, currentItem: AllContent
     ) {
+        val sharedPrefManaged = mContext.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES,
+            Context.MODE_PRIVATE
+        )
         GeneralUtils.getInternalStoragePath(sharedPrefManaged)?.let { internalStoragePath ->
             val downloadFileName = currentItem.name.toString()
             val targetFile = File(internalStoragePath, downloadFileName)
@@ -189,12 +193,12 @@ object DownloadUtils {
                 Toast.makeText(
                     context, "$fileName Upload Cancelled", Toast.LENGTH_SHORT
                 ).show()
-                Log.e(DownloadUtilsTag, "Error, user cancelled upload: $uploadInfo.")
+                Log.e(UploadDownloadUtilsTag, "Error, user cancelled upload: $uploadInfo.")
             }
 
             is UploadError -> {
                 Log.e(
-                    DownloadUtilsTag, "Error, upload error: ${exception.serverResponse.code}"
+                    UploadDownloadUtilsTag, "Error, upload error: ${exception.serverResponse.code}"
                 )
                 if (exception.serverResponse.code == 400) {
                     Toast.makeText(
@@ -208,7 +212,7 @@ object DownloadUtils {
             }
 
             else -> {
-                Log.e(DownloadUtilsTag, "Error: $uploadInfo", exception)
+                Log.e(UploadDownloadUtilsTag, "Error: $uploadInfo", exception)
                 Toast.makeText(context, "File Upload Failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -244,9 +248,15 @@ object DownloadUtils {
         override fun onPostExecute(result: Boolean?) {
             progressDialog!!.dismiss()
             val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)!!
-            upload(
-                zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
-            )
+            if (GeneralUtils.hasActiveInternetConnection(context)) {
+                upload(
+                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
+                )
+            } else {
+                Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
+                    .show()
+                FileUtils.deleteFile(zipFilePath + zipFileName)
+            }
         }
 
         override fun doInBackground(vararg p0: Void?): Boolean {
@@ -291,10 +301,14 @@ object DownloadUtils {
         override fun onPostExecute(result: Boolean?) {
             progressDialog!!.dismiss()
             val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
-            if (upload) {
+            if (upload and (GeneralUtils.hasActiveInternetConnection(context))) {
                 upload(
                     zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
                 )
+            } else {
+                Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
+                    .show()
+                FileUtils.deleteFile(zipFilePath + zipFileName)
             }
         }
 

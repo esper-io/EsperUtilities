@@ -9,10 +9,9 @@ import android.os.storage.StorageVolume
 import androidx.annotation.DrawableRes
 import androidx.annotation.Size
 import androidx.annotation.StringRes
-import java8.nio.file.Path
-import java8.nio.file.Paths
 import io.esper.android.files.R
 import io.esper.android.files.about.AboutActivity
+import io.esper.android.files.app.application
 import io.esper.android.files.compat.getDescriptionCompat
 import io.esper.android.files.compat.isPrimaryCompat
 import io.esper.android.files.compat.pathCompat
@@ -20,7 +19,6 @@ import io.esper.android.files.file.JavaFile
 import io.esper.android.files.file.asFileSize
 import io.esper.android.files.filelist.DlcActivity
 import io.esper.android.files.ftpserver.FtpServerActivity
-import io.esper.android.files.provider.root.rootContext
 import io.esper.android.files.settings.Settings
 import io.esper.android.files.settings.SettingsActivity
 import io.esper.android.files.settings.StandardDirectoryListActivity
@@ -28,17 +26,25 @@ import io.esper.android.files.storage.AddStorageDialogActivity
 import io.esper.android.files.storage.FileSystemRoot
 import io.esper.android.files.storage.Storage
 import io.esper.android.files.storage.StorageVolumeListLiveData
-import io.esper.android.files.util.Constants
+import io.esper.android.files.ui.SplashScreenUI
+import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.isMounted
 import io.esper.android.files.util.putArgs
 import io.esper.android.files.util.supportsExternalStorageManager
 import io.esper.android.files.util.valueCompat
+import java8.nio.file.Path
+import java8.nio.file.Paths
 
 val navigationItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
-        addAll(deviceDetails)
-        add(null)
+        if (GeneralUtils.getDeviceNameFromPrefs(application) != null && GeneralUtils.showDeviceDetails(
+                application
+            )
+        ) {
+            addAll(deviceDetails)
+            add(null)
+        }
         addAll(storageItems)
         if (Environment::class.supportsExternalStorageManager()) {
             // Starting with R, we can get read/write access to non-primary storage volumes with
@@ -47,7 +53,9 @@ val navigationItems: List<NavigationItem?>
             // to avoid confusion.
             addAll(storageVolumeItems)
         }
-        add(AddStorageItem())
+        if (GeneralUtils.isAddingStorageAllowed(application)) {
+            add(AddStorageItem())
+        }
         add(null)
         addAll(menuItems)
     }
@@ -205,28 +213,22 @@ fun deviceDetailsItem(): NavigationItem {
         override val iconRes: Int = R.drawable.device_icon_white_24dp
 
         override fun getTitle(context: Context): String {
-            return context.getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            ).getString(
-                Constants.ESPER_DEVICE_NAME,
-                context.getString(R.string.navigation_device_details_title_unknown)
-            ).toString()
+            return GeneralUtils.getDeviceNameFromPrefs(context)
+                ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
         override fun getSubtitle(context: Context): String {
-            return context.getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            ).getString(
-                Constants.ESPER_DEVICE_SERIAL,
-                context.getString(R.string.navigation_device_details_title_unknown)
-            ).toString()
+            return GeneralUtils.getDeviceSerialFromPrefs(context)
+                ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
         override fun onClick(listener: Listener) {
             clickCount++
             handler.removeCallbacks(resetClickCountRunnable)
             if (clickCount >= requiredClicks) {
-                // TODO Implement the action to be performed when the required number of clicks is reached
+                val intent = Intent(application.applicationContext, SplashScreenUI::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                application.applicationContext.startActivity(intent)
                 clickCount = 0
             } else {
                 handler.postDelayed(resetClickCountRunnable, delayMillis)
@@ -390,25 +392,43 @@ private class BookmarkDirectoryItem(
 }
 
 private val menuItems: List<NavigationItem>
-    @Size(3) get() = listOf(
-        IntentMenuItem(
-            R.drawable.download_icon_white_24dp,
-            R.string.downloadable_content,
-            DlcActivity::class.createIntent()
-        ), IntentMenuItem(
-            R.drawable.shared_directory_icon_white_24dp,
-            R.string.navigation_ftp_server,
-            FtpServerActivity::class.createIntent()
-        ), IntentMenuItem(
-            R.drawable.settings_icon_white_24dp,
-            R.string.navigation_settings,
-            SettingsActivity::class.createIntent()
-        ), IntentMenuItem(
-            R.drawable.about_icon_white_24dp,
-            R.string.navigation_about,
-            AboutActivity::class.createIntent()
+    get() {
+        val items = mutableListOf<NavigationItem>()
+        if (GeneralUtils.isDlcAllowed(application)) {
+            items.add(
+                IntentMenuItem(
+                    R.drawable.download_icon_white_24dp,
+                    R.string.downloadable_content,
+                    DlcActivity::class.createIntent()
+                )
+            )
+        }
+        if (GeneralUtils.isFtpServerAllowed(application)) {
+            items.add(
+                IntentMenuItem(
+                    R.drawable.shared_directory_icon_white_24dp,
+                    R.string.navigation_ftp_server,
+                    FtpServerActivity::class.createIntent()
+                )
+            )
+        }
+        items.addAll(
+            listOf(
+                IntentMenuItem(
+                    R.drawable.settings_icon_white_24dp,
+                    R.string.navigation_settings,
+                    SettingsActivity::class.createIntent()
+                ), IntentMenuItem(
+                    R.drawable.about_icon_white_24dp,
+                    R.string.navigation_about,
+                    AboutActivity::class.createIntent()
+                )
+            )
         )
-    )
+
+        return items
+    }
+
 
 private abstract class MenuItem(
     @DrawableRes override val iconRes: Int, @StringRes val titleRes: Int

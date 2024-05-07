@@ -338,6 +338,12 @@
         </activity>
 
         <activity
+            android:name="io.esper.android.files.ui.SplashScreenUI"
+            android:exported="true"
+            android:theme="@style/Theme.MaterialFiles.Immersive">
+        </activity>
+
+        <activity
             android:name="io.esper.android.files.viewer.image.ImageViewerActivity"
             android:exported="true"
             android:label="@string/image_viewer_title"

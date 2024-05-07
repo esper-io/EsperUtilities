@@ -21,6 +21,7 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.listener.OnErrorListener
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener
+import com.github.barteksc.pdfviewer.listener.OnPageChangeListener
 import com.github.barteksc.pdfviewer.listener.OnPageErrorListener
 import com.github.barteksc.pdfviewer.listener.OnTapListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -39,8 +40,8 @@ import me.zhanghai.android.systemuihelper.SystemUiHelper
 import java.io.File
 
 
-class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListener, OnErrorListener,
-    OnTapListener {
+class PdfViewerFragment : Fragment(), OnPageChangeListener, OnPageErrorListener,
+    OnLoadCompleteListener, OnErrorListener, OnTapListener {
     private var pdfView: PDFView? = null
     private lateinit var binding: PdfFragmentBinding
     private val PdfViewerFragmentTag = "PdfViewerFragment"
@@ -86,8 +87,8 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
             val uiMode =
                 requireContext().resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
             binding.pdfView.fromFile(argsPaths[0].toFile()).password(pdfPassword)
-                .enableAnnotationRendering(true).onError(this).onTap(this).onLoad(this)
-                .onPageError(this).autoSpacing(true)
+                .enableAnnotationRendering(true).onPageChange(this).onError(this).onTap(this)
+                .onLoad(this).onPageError(this).autoSpacing(true)
                 .nightMode(uiMode == Configuration.UI_MODE_NIGHT_YES).load()
         } catch (e: Exception) {
             Log.e(PdfViewerFragmentTag, "loadPdf: error = $e")
@@ -96,22 +97,30 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
 
     override fun loadComplete(nbPages: Int) {
         wrongPasswordEntered = 0
-        systemUiHelper.delayHide(5000)
-        var title = File(argsPaths[0].toString()).name
+        var title: String? = null
         try {
-            val meta: PdfDocument.Meta = pdfView!!.getDocumentMeta()
+            val meta: PdfDocument.Meta = binding.pdfView.documentMeta
             title = meta.title
         } catch (e: Exception) {
             Log.e(PdfViewerFragmentTag, "loadComplete: error = $e")
         }
+        if (TextUtils.isEmpty(title)) {
+            title = File(argsPaths[0].toString()).name
+        }
         updateTitle(title)
     }
 
-    private fun updateTitle(title: String) {
+    private fun updateTitle(title: String? = null, pageNumber: Int = 0, totalPageCount: Int = 0) {
         if (!TextUtils.isEmpty(title)) {
             activity.title = title
         }
+        binding.toolbar.subtitle = if (pageNumber >= 0) {
+            "Page: ${pageNumber + 1}/$totalPageCount"
+        } else {
+            null
+        }
     }
+
 
     @Parcelize
     class Args(val intent: Intent, val position: Int) : ParcelableArgs
@@ -143,7 +152,6 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
 
     override fun onTap(e: MotionEvent?): Boolean {
         systemUiHelper.toggle()
-        systemUiHelper.delayHide(5000)
         return true
     }
 
@@ -222,5 +230,14 @@ class PdfViewerFragment : Fragment(), OnPageErrorListener, OnLoadCompleteListene
         }
 
         dialogBuilder.show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        pdfView?.recycle()
+    }
+
+    override fun onPageChanged(page: Int, pageCount: Int) {
+        updateTitle("", page, pageCount)
     }
 }

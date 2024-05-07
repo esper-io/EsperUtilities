@@ -69,7 +69,7 @@ object Constants {
     const val SlideShowActivityTag = "SlideShowActivity"
     const val BottomSheetFragmentTag = "BottomSheetFragment"
     const val ContentAdapterTag = "ContentAdapter"
-    const val DownloadUtilsTag = "DownloadUtils"
+    const val UploadDownloadUtilsTag = "UploadDownloadUtils"
     const val ManagedConfigUtilsTag = "ManagedConfigUtils"
     const val GeneralUtilsTag = "GeneralUtils"
     const val FileListFragmentTag = "FileListFragment"
@@ -82,6 +82,8 @@ object Constants {
 
     const val ESPER_DEVICE_NAME = "esperDeviceName"
     const val ESPER_DEVICE_SERIAL = "esperDeviceSerial"
+    const val ESPER_DEVICE_IMEI1 = "esperDeviceIMEI1"
+    const val ESPER_DEVICE_IMEI2 = "esperDeviceIMEI2"
 
     const val SHARED_MANAGED_CONFIG_VALUES = "ManagedConfig"
     const val SHARED_MANAGED_CONFIG_APP_NAME = "app_name"
@@ -103,6 +105,7 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED = "ftp_allowed"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT = "auto_upload_content"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT_INTERVAL = "auto_upload_content_interval"
+    const val SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS = "show_device_details"
 
     const val TIME_1_HOUR = 60 * 60 * 1000
     const val TIME_1_DAY = 24 * 60 * 60 * 1000

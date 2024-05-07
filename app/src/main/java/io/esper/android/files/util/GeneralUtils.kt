@@ -52,12 +52,14 @@ object GeneralUtils {
         view.startAnimation(anim)
     }
 
-    fun hasNetwork(context: Context): Boolean? {
-        var isConnected: Boolean? = false
+    fun hasActiveInternetConnection(context: Context): Boolean {
+        var isConnected = false
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetwork: NetworkInfo? = connectivityManager.activeNetworkInfo
-        if (activeNetwork != null && activeNetwork.isConnected) isConnected = true
+        if (activeNetwork != null && activeNetwork.isConnected) {
+            isConnected = true
+        }
         return isConnected
     }
 
@@ -76,22 +78,17 @@ object GeneralUtils {
         return dateFormat.format(date)
     }
 
-    private fun getDeviceName(context: Context, sharedPrefManaged: SharedPreferences?) {
+    private fun startEsperSDKActivation(context: Context, sharedPrefManaged: SharedPreferences?) {
         val token = sharedPrefManaged!!.getString(
             Constants.SHARED_MANAGED_CONFIG_API_KEY, null
         )
-        val existingDeviceName =
-            if (sharedPrefManaged.getString(Constants.ESPER_DEVICE_NAME, null) != null) {
-                sharedPrefManaged.getString(Constants.ESPER_DEVICE_NAME, null)
-            } else {
-                null
-            }
+        val existingDeviceName = getDeviceNameFromPrefs(context)
         if (token != null && TextUtils.isEmpty(existingDeviceName)) {
             Log.i(Constants.GeneralUtilsTag, "initSDK: Initializing SDK")
             val sdk = getEsperSDK(context)
             sdk.activateSDK(token, object : EsperDeviceSDK.Callback<Void?> {
                 override fun onResponse(response: Void?) {
-                    getDeviceSerialNumber(sdk, sharedPrefManaged)
+                    getDeviceDetails(sdk, sharedPrefManaged)
                     getProvisioningInfo(context, sdk, sharedPrefManaged)
                 }
 
@@ -105,17 +102,59 @@ object GeneralUtils {
         }
     }
 
+    fun isAddingStorageAllowed(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE, false)
+    }
+
+    fun isDlcAllowed(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, false)
+    }
+
+    fun isFtpServerAllowed(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, false)
+    }
+
+    fun showDeviceDetails(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false)
+    }
+
+    fun getDeviceNameFromPrefs(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.ESPER_DEVICE_NAME, null)
+    }
+
+    fun getDeviceSerialFromPrefs(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.ESPER_DEVICE_SERIAL, null)
+    }
+
     private fun getProvisioningInfo(
         context: Context, sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences
     ) {
         sdk.getProvisionInfo(object : EsperDeviceSDK.Callback<ProvisionInfo> {
             override fun onResponse(response: ProvisionInfo?) {
-                val tenant = response?.apiEndpoint
-                sharedPrefManaged.edit().putString(Constants.SHARED_MANAGED_CONFIG_TENANT, tenant)
-                    .apply()
-                val enterpriseId = response?.tenantUUID
-                sharedPrefManaged.edit()
-                    .putString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, enterpriseId).apply()
+                if (!response?.apiEndpoint.isNullOrEmpty()) {
+                    val tenant = response?.apiEndpoint
+                    sharedPrefManaged.edit()
+                        .putString(Constants.SHARED_MANAGED_CONFIG_TENANT, tenant).apply()
+                }
+                if (!response?.tenantUUID.isNullOrEmpty()) {
+                    val enterpriseId = response?.tenantUUID
+                    sharedPrefManaged.edit()
+                        .putString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, enterpriseId)
+                        .apply()
+                    triggerRebirth(context)
+                }
                 triggerRebirth(context)
             }
 
@@ -128,7 +167,7 @@ object GeneralUtils {
         })
     }
 
-    private fun getDeviceSerialNumber(sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences?) {
+    private fun getDeviceDetails(sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences?) {
         sdk.getEsperDeviceInfo(object : EsperDeviceSDK.Callback<EsperDeviceInfo> {
 
             override fun onFailure(t: Throwable) {
@@ -139,14 +178,30 @@ object GeneralUtils {
             }
 
             override fun onResponse(esperDeviceInfo: EsperDeviceInfo?) {
-                val deviceId = esperDeviceInfo?.deviceId
-                sharedPrefManaged?.edit()?.putString(
-                    Constants.ESPER_DEVICE_NAME, deviceId
-                )?.apply()
-                val serialNumber = esperDeviceInfo?.serialNo
-                sharedPrefManaged?.edit()?.putString(
-                    Constants.ESPER_DEVICE_SERIAL, serialNumber
-                )?.apply()
+                if (!esperDeviceInfo?.deviceId.isNullOrEmpty()) {
+                    val deviceId = esperDeviceInfo?.deviceId
+                    sharedPrefManaged?.edit()?.putString(
+                        Constants.ESPER_DEVICE_NAME, deviceId
+                    )?.apply()
+                }
+                if (!esperDeviceInfo?.serialNo.isNullOrEmpty()) {
+                    val serialNo = esperDeviceInfo?.serialNo
+                    sharedPrefManaged?.edit()?.putString(
+                        Constants.ESPER_DEVICE_SERIAL, serialNo
+                    )?.apply()
+                }
+                if (!esperDeviceInfo?.imei1.isNullOrEmpty()) {
+                    val imei1 = esperDeviceInfo?.imei1
+                    sharedPrefManaged?.edit()?.putString(
+                        Constants.ESPER_DEVICE_IMEI1, imei1
+                    )?.apply()
+                }
+                if (!esperDeviceInfo?.imei2.isNullOrEmpty()) {
+                    val imei2 = esperDeviceInfo?.imei2
+                    sharedPrefManaged?.edit()?.putString(
+                        Constants.ESPER_DEVICE_IMEI2, imei2
+                    )?.apply()
+                }
             }
         })
     }
@@ -245,7 +300,7 @@ object GeneralUtils {
     }
 
     fun initSDK(sharedPrefManaged: SharedPreferences, context: Context) {
-        getDeviceName(context, sharedPrefManaged)
+        startEsperSDKActivation(context, sharedPrefManaged)
     }
 
     fun getEsperSDK(context: Context): EsperDeviceSDK {
@@ -271,28 +326,9 @@ object GeneralUtils {
         })
     }
 
-    fun activateEsperSDK(context: Context, callback: (Boolean) -> Unit) {
-        val apiKey = context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE).getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
-        apiKey?.let {
-            getEsperSDK(context).activateSDK(it, object : EsperDeviceSDK.Callback<Void?> {
-                override fun onResponse(response: Void?) {
-                    callback(true)
-                }
-
-                override fun onFailure(t: Throwable) {
-                    Log.d(
-                        Constants.GeneralUtilsTag,
-                        "activateSDK: Callback.onFailure: message : " + t.message
-                    )
-                    // Call the callback with a default value or handle failure case as needed
-                    callback(false)
-                }
-            })
-        }
-    }
-
     fun getApiKey(context: Context): String? {
         return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE).getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
     }
 }

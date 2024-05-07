@@ -29,6 +29,7 @@ import io.esper.android.files.ui.DisabledAlphaImageView
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
+import io.esper.android.files.util.UploadDownloadUtils
 import me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
 import java.text.DecimalFormat
 import java.util.Locale
@@ -203,13 +204,10 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
 //            }
             holder.downloadBtn.isEnabled = false
             holder.downloadImg.setImageResource(R.drawable.ic_complete)
-            GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)?.let { it1 ->
-                FileDownloadManager.initDownload(
-                    mContext!!,
-                    currentItem.download_url.toString(),
+            mContext?.let { it1 ->
+                UploadDownloadUtils.startDownload(
                     it1,
-                    currentItem.name.toString()
-                )
+                    currentItem)
             }
         }
         GeneralUtils.setFadeAnimation(holder.itemView)
