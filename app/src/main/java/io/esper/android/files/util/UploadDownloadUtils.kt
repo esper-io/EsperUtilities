@@ -104,6 +104,13 @@ object UploadDownloadUtils {
         lifecycleOwner: LifecycleOwner,
         deleteFile: Boolean = false
     ) {
+        if (GeneralUtils.getDeviceNameFromPrefs(
+                context
+            ) == null) {
+            Toast.makeText(context, "Info not available for upload, please set it in the managed config.", Toast.LENGTH_SHORT).show()
+            FileUtils.deleteFile(filePath)
+            return
+        }
         Toast.makeText(context, "$fileName Upload Starting", Toast.LENGTH_SHORT).show()
         val sharedPrefManaged = context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
