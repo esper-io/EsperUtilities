@@ -39,6 +39,12 @@ object ManagedConfigUtils {
 //        "add_storage": true
 //        //(default: false)
 //        "ftp_allowed": true
+//        //(default: false)
+//        "show_device_details": true
+//        //(default: false)
+//        "esper_app_store_visibility": true
+//        //(default: false)
+//        "convert_files_to_app_store": true
 //    }
 
     private fun startManagedConfigValuesReceiver(
@@ -79,6 +85,8 @@ object ManagedConfigUtils {
             deletionAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val onDemandDownloadChange =
             onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val esperAppStoreVisibility =
+            esperAppStoreVisibilityManagedConfig(context, appRestrictions, sharedPrefManaged)
         val apiKeyChange = apiKeyManagedConfig(context, appRestrictions, sharedPrefManaged)
         val uploadContentChange =
             uploadContentManagedConfig(context, appRestrictions, sharedPrefManaged)
@@ -90,12 +98,15 @@ object ManagedConfigUtils {
         val ftpAllowedChange = ftpAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val showDeviceDetails =
             showDeviceDetailsManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val convertFilesToAppStore = convertFilesToAppStoreManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
 
         if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore) {
             if (!apiKeyChange) {
                 Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
@@ -115,8 +126,7 @@ object ManagedConfigUtils {
         Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values (Manually Triggered)")
         var restrictionsBundle: Bundle?
         val sharedPrefManaged = context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES,
-            Context.MODE_PRIVATE
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
         val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
         restrictionsBundle = userManager.getApplicationRestrictions(context.packageName)
@@ -257,6 +267,27 @@ object ManagedConfigUtils {
                 .apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "On Demand Download Changed")
+        }
+        return result
+    }
+
+    private fun esperAppStoreVisibilityManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val onDemandDownload =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY
+            ) else false
+        val changeInValue = onDemandDownload != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, onDemandDownload
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Esper App Store Visibility Changed")
         }
         return result
     }
@@ -406,6 +437,29 @@ object ManagedConfigUtils {
                 .apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Show Device Details Allowed Changed")
+        }
+        return result
+    }
+
+
+    private fun convertFilesToAppStoreManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val convertFilesToAppStore =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE
+            ) else false
+        val changeInValue = convertFilesToAppStore != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE,
+            false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, convertFilesToAppStore
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To App Store Changed")
         }
         return result
     }

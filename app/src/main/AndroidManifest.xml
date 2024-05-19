@@ -374,6 +374,13 @@
             android:launchMode="singleTop"
             android:theme="@style/Theme.MaterialFiles" />
 
+        <activity
+            android:name="io.esper.android.files.filelist.AppStoreActivity"
+            android:exported="true"
+            android:label="@string/esper_app_store"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MaterialFiles" />
+
         <service
             android:name="io.esper.android.files.filejob.FileJobService"
             android:foregroundServiceType="dataSync" />

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/whole_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:padding="5dp"
+    card_view:cardCornerRadius="7dp"
+    card_view:cardElevation="2dp">
+
+    <LinearLayout
+        android:id="@+id/item_background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:background="@drawable/selector_row"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:padding="3dp"
+        android:weightSum="1">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.87"
+            android:orientation="vertical"
+
+            android:weightSum="1">
+
+            <TextView
+                android:id="@+id/txt_item_name2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:paddingStart="2dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+
+                tools:ignore="RtlSymmetry"
+                tools:text="Arquivo" />
+
+            <TextView
+                android:id="@+id/txt_item_name3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:paddingStart="2dp"
+                android:textStyle="italic"
+                tools:ignore="RtlSymmetry"
+                tools:text="Arquivo" />
+
+            <TextView
+                android:id="@+id/txt_item_name4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:paddingStart="2dp"
+                android:textStyle="italic"
+                tools:ignore="RtlSymmetry"
+                tools:text="Arquivo" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/latestVersionBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="0.13"
+            android:background="@drawable/rounded_shape_gray"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/versionBtn2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="4dp"
+                android:text="@string/install"
+                android:textColor="@color/material_purple_500"
+                android:textSize="15sp" />
+
+            <ProgressBar
+                android:id="@+id/progressBtn"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:indeterminate="false"
+                android:max="100"
+                android:min="1"
+                android:minWidth="50dp"
+                android:minHeight="50dp"
+                android:padding="2dp"
+                android:progressTint="@color/material_deep_purple_500"
+                android:visibility="gone"
+                tools:targetApi="o" />
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

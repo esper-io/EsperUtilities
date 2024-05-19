@@ -5,7 +5,7 @@
     <restriction
         android:key="app_name"
         android:restrictionType="string"
-        android:title="Set App Name"
+        android:title="Company Name"
         tools:ignore="HardcodedText" />
 
     <restriction
@@ -21,24 +21,6 @@
         tools:ignore="HardcodedText" />
 
     <restriction
-        android:key="inbuilt_pdf"
-        android:restrictionType="bool"
-        android:title="Use Inbuilt PDF Reader"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="inbuilt_audio_video"
-        android:restrictionType="bool"
-        android:title="Use Inbuilt Audio/Video Player"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="inbuilt_image"
-        android:restrictionType="bool"
-        android:title="Use Inbuilt Image Viewer"
-        tools:ignore="HardcodedText" />
-
-    <restriction
         android:key="on_demand_download"
         android:restrictionType="bool"
         android:title="Enable On-Demand Download"
@@ -48,12 +30,6 @@
         android:key="api_key"
         android:restrictionType="string"
         android:title="API Key"
-        tools:ignore="HardcodedText" />
-
-    <restriction
-        android:key="allowed_content"
-        android:restrictionType="string"
-        android:title="Allowed Content"
         tools:ignore="HardcodedText" />
 
     <restriction
@@ -72,6 +48,48 @@
         android:key="external_root_path"
         android:restrictionType="string"
         android:title="Set External Root Path"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="sharing_allowed"
+        android:restrictionType="bool"
+        android:title="Allow Sharing"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="creation_allowed"
+        android:restrictionType="bool"
+        android:title="Allow Creation"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="add_storage"
+        android:restrictionType="bool"
+        android:title="Add Storage"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="ftp_allowed"
+        android:restrictionType="bool"
+        android:title="Allow FTP"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="show_device_details"
+        android:restrictionType="bool"
+        android:title="Show Device Details"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="esper_app_store_visibility"
+        android:restrictionType="bool"
+        android:title="Esper App Store Visibility"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="convert_files_to_app_store"
+        android:restrictionType="bool"
+        android:title="Convert Files to App Store"
         tools:ignore="HardcodedText" />
 
 </restrictions>

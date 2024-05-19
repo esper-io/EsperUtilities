@@ -216,4 +216,5 @@ dependencies {
     implementation 'com.github.naumanmir:filedownloadservice:1.2'
     implementation 'com.ixuea:android-downloader:3.0.1'
     implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
+    implementation 'com.mindorks.android:prdownloader:0.6.0'
 }

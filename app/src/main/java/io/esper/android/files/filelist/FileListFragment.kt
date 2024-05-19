@@ -98,6 +98,8 @@ import io.esper.android.files.util.DebouncedRunnable
 import io.esper.android.files.util.UploadDownloadUtils
 import io.esper.android.files.util.Failure
 import io.esper.android.files.util.FileUtils
+import io.esper.android.files.util.FileUtils.installApkWithEsperSDK
+import io.esper.android.files.util.FileUtils.installApkWithPackageInstaller
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.Loading
 import io.esper.android.files.util.ManagedConfigUtils
@@ -1272,54 +1274,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!TextUtils.isEmpty(GeneralUtils.getApiKey(requireContext()))) {
             context?.let { installApkWithEsperSDK(it, file) }
         } else {
-            installApkWithPackageInstaller(file)
-        }
-    }
-
-    private fun installApkWithPackageInstaller(file: FileItem) {
-        val path = file.path
-        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (!path.isArchivePath) path.fileProviderUri else null
-        } else {
-            // PackageInstaller only supports file URI before N.
-            if (path.isLinuxPath) Uri.fromFile(path.toFile()) else null
-        }
-        if (uri != null) {
-            startActivitySafe(uri.createInstallPackageIntent())
-        } else {
-            FileJobService.installApk(path, requireContext())
-        }
-    }
-
-    private fun installApkWithEsperSDK(context: Context, file: FileItem) {
-        GeneralUtils.isEsperDeviceSDKActivated(context) { activated ->
-            if (activated) {
-                Log.d(Constants.FileListFragmentTag, "installApkWithEsperSDK: Esper Device SDK is activated")
-                val packageName = FileUtils.getPackageNameFromApk(context, file.path.toString())
-                packageName?.let { it1 ->
-                    GeneralUtils.getEsperSDK(context).installApp(
-                        it1,
-                        file.path.toString(),
-                        object : EsperDeviceSDK.Callback<Boolean> {
-                            override fun onResponse(p0: Boolean?) {
-                                handler.post {
-                                    Toast.makeText(
-                                        context, "App installed successfully", Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-
-                            override fun onFailure(t: Throwable) {
-                                handler.post {
-                                    installApkWithPackageInstaller(file)
-                                }
-                            }
-                        })
-                }
-            } else {
-                Log.d(Constants.FileListFragmentTag, "installApkWithEsperSDK: Esper Device SDK is not activated, using package installer")
-                installApkWithPackageInstaller(file)
-            }
+            context?.let { installApkWithPackageInstaller(it, file) }
         }
     }
 
@@ -1486,7 +1441,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         ) {
             val path = currentPath
             UploadDownloadUtils.Compress(
-                context, path.toString(), GeneralUtils.getDeviceNameFromPrefs(context) + "-${GeneralUtils.getCurrentDateTime()}.zip", this, sharedPrefManaged
+                context, path.toString(), GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip", this, sharedPrefManaged
             ).execute()
         } else {
             showToast(R.string.upload_disabled)
@@ -1509,7 +1464,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             UploadDownloadUtils.CompressMultipleFiles(
                 context,
                 filePathsToZip,
-                GeneralUtils.getDeviceNameFromPrefs(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
+                GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
                 requireActivity(),
                 sharedPrefManaged,
                 true

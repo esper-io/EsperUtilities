@@ -17,6 +17,7 @@ import io.esper.android.files.compat.isPrimaryCompat
 import io.esper.android.files.compat.pathCompat
 import io.esper.android.files.file.JavaFile
 import io.esper.android.files.file.asFileSize
+import io.esper.android.files.filelist.AppStoreActivity
 import io.esper.android.files.filelist.DlcActivity
 import io.esper.android.files.ftpserver.FtpServerActivity
 import io.esper.android.files.settings.Settings
@@ -38,7 +39,7 @@ import java8.nio.file.Paths
 
 val navigationItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
-        if (GeneralUtils.getDeviceNameFromPrefs(application) != null && GeneralUtils.showDeviceDetails(
+        if (GeneralUtils.getDeviceName(application) != null && GeneralUtils.showDeviceDetails(
                 application
             )
         ) {
@@ -213,12 +214,12 @@ fun deviceDetailsItem(): NavigationItem {
         override val iconRes: Int = R.drawable.device_icon_white_24dp
 
         override fun getTitle(context: Context): String {
-            return GeneralUtils.getDeviceNameFromPrefs(context)
+            return GeneralUtils.getDeviceName(context)
                 ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
         override fun getSubtitle(context: Context): String {
-            return GeneralUtils.getDeviceSerialFromPrefs(context)
+            return GeneralUtils.getDeviceSerial(context)
                 ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
@@ -400,6 +401,15 @@ private val menuItems: List<NavigationItem>
                     R.drawable.download_icon_white_24dp,
                     R.string.downloadable_content,
                     DlcActivity::class.createIntent()
+                )
+            )
+        }
+        if (GeneralUtils.isEsperAppStoreVisible(application)) {
+            items.add(
+                IntentMenuItem(
+                    R.drawable.esper_app_store_icon,
+                    R.string.esper_app_store,
+                    AppStoreActivity::class.createIntent()
                 )
             )
         }

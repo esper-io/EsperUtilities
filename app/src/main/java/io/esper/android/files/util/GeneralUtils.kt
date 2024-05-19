@@ -46,6 +46,13 @@ object GeneralUtils {
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
+    fun hideKeyboard(context: Context) {
+        val imm = context.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        var view = context.activity?.currentFocus
+        if (view == null) view = View(context)
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
     fun setFadeAnimation(view: View) {
         val anim = AlphaAnimation(0.0f, 1.0f)
         anim.duration = 300
@@ -82,7 +89,7 @@ object GeneralUtils {
         val token = sharedPrefManaged!!.getString(
             Constants.SHARED_MANAGED_CONFIG_API_KEY, null
         )
-        val existingDeviceName = getDeviceNameFromPrefs(context)
+        val existingDeviceName = getDeviceName(context)
         if (token != null && TextUtils.isEmpty(existingDeviceName)) {
             Log.i(Constants.GeneralUtilsTag, "initSDK: Initializing SDK")
             val sdk = getEsperSDK(context)
@@ -114,6 +121,12 @@ object GeneralUtils {
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, false)
     }
 
+    fun isEsperAppStoreVisible(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, false)
+    }
+
     fun isFtpServerAllowed(context: Context): Boolean {
         return context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
@@ -124,18 +137,6 @@ object GeneralUtils {
         return context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false)
-    }
-
-    fun getDeviceNameFromPrefs(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.ESPER_DEVICE_NAME, null)
-    }
-
-    fun getDeviceSerialFromPrefs(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.ESPER_DEVICE_SERIAL, null)
     }
 
     private fun getProvisioningInfo(
@@ -197,9 +198,15 @@ object GeneralUtils {
                     )?.apply()
                 }
                 if (!esperDeviceInfo?.imei2.isNullOrEmpty()) {
-                    val imei2 = esperDeviceInfo?.imei2
+                    val deviceId = esperDeviceInfo?.imei2
                     sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_IMEI2, imei2
+                        Constants.ESPER_DEVICE_IMEI2, deviceId
+                    )?.apply()
+                }
+                if (!esperDeviceInfo?.uuid.isNullOrEmpty()) {
+                    val deviceId = esperDeviceInfo?.uuid
+                    sharedPrefManaged?.edit()?.putString(
+                        Constants.ESPER_DEVICE_UUID, deviceId
                     )?.apply()
                 }
             }
@@ -326,9 +333,39 @@ object GeneralUtils {
         })
     }
 
+    fun getDeviceName(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.ESPER_DEVICE_NAME, null)
+    }
+
+    fun getDeviceSerial(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.ESPER_DEVICE_SERIAL, null)
+    }
+
     fun getApiKey(context: Context): String? {
         return context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         ).getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
+    }
+
+    fun getEnterpriseId(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, null)
+    }
+
+    fun getTenant(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.SHARED_MANAGED_CONFIG_TENANT, null)
+    }
+
+    fun getDeviceUUID(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.ESPER_DEVICE_UUID, null)
     }
 }
