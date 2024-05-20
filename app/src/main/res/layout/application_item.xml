@@ -2,8 +2,7 @@
 
 <io.esper.android.files.ui.CheckableForegroundLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/itemLayout"
+    android:id="@+id/item_background"
     android:layout_width="match_parent"
     android:layout_height="@dimen/two_line_list_item_height"
     android:foreground="?selectableItemBackground"
@@ -46,13 +45,25 @@
             android:singleLine="true"
             android:textAppearance="?textAppearanceListItem" />
 
-        <io.esper.android.files.ui.AutoGoneTextView
+        <TextView
             android:id="@+id/txt_item_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:duplicateParentState="true"
             android:ellipsize="end"
             android:maxLines="1"
+            android:textAppearance="?textAppearanceListItemSecondary"
+            android:textColor="?android:textColorSecondary" />
+
+
+        <io.esper.android.files.ui.AutoGoneTextView
+            android:id="@+id/txt_item_header2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
             android:textAppearance="?textAppearanceListItemSecondary"
             android:textColor="?android:textColorSecondary" />
     </LinearLayout>
@@ -63,24 +74,51 @@
       ~ implementation.
       -->
     <me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
-        android:id="@+id/downloadBtn"
-        android:layout_width="47dp"
-        android:layout_height="@dimen/touch_target_size"
-        android:layout_marginStart="@dimen/content_start_from_screen_edge_margin_minus_36dp_considering_at_least_8dp"
-        android:layout_marginEnd="@dimen/screen_edge_margin_minus_12dp_at_least_8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
         android:background="@null"
         app:tint="?colorControlNormal">
 
-        <ImageView
-            android:id="@+id/downloadImg"
+        <LinearLayout
+            android:id="@+id/btnLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@null"
-            android:padding="13dp"
-            android:src="@drawable/ic_cloud_download"
-            android:textSize="15sp"
-            app:tint="@color/activity_icon_tint"
-            tools:ignore="ContentDescription" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/updateBtn"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="10dp"
+                android:visibility="gone"
+                android:text="@string/update"
+                android:textColor="?colorSurfaceInverse"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/installBtn"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="10dp"
+                android:text="@string/install"
+                android:textColor="?colorSurfaceInverse"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBtn"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:max="100"
+            android:padding="10dp"
+            android:progress="0"
+            android:progressTint="?colorSurfaceInverse"
+            android:visibility="gone" />
 
     </me.zhanghai.android.foregroundcompat.ForegroundLinearLayout>
 </io.esper.android.files.ui.CheckableForegroundLinearLayout>

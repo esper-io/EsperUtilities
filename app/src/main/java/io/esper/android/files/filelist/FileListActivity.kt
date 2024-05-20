@@ -30,11 +30,21 @@ class FileListActivity : AppActivity() {
 
         // Calls ensureSubDecor().
         findViewById<View>(android.R.id.content)
+
         // TODO check if its needed
 //        GeneralUtils.initNetworkConfigs()
+
         FileUtils.createEsperFolder()
         initSharedPrefs()
         sharedPrefManaged?.let { GeneralUtils.initSDK(it, this) }
+
+        // Check if the files app need to be converted to app store
+        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false)) {
+            startActivity(AppStoreActivity::class.createIntent())
+            finish()
+            return
+        }
+
         ManagedConfigUtils.getManagedConfigValues(this)
         if (savedInstanceState == null) {
             fragment = FileListFragment().putArgs(FileListFragment.Args(intent))

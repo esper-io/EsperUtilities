@@ -43,4 +43,5 @@
     <color name="file_icon_yellow">#F4B400</color>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="gray">#D3D3D3</color>
 </resources>

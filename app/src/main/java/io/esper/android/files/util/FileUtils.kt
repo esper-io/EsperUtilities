@@ -1,10 +1,22 @@
 package io.esper.android.files.util
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.util.Log
+import android.widget.Toast
+import com.topjohnwu.superuser.internal.UiThreadHandler
+import io.esper.android.files.R
+import io.esper.android.files.file.FileItem
+import io.esper.android.files.file.fileProviderUri
 import io.esper.android.files.filejob.FileJobService
 import io.esper.android.files.model.Item
+import io.esper.android.files.provider.archive.isArchivePath
+import io.esper.android.files.provider.linux.isLinuxPath
+import io.esper.devicesdk.EsperDeviceSDK
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -200,5 +212,94 @@ object FileUtils {
             Log.e("Error", "Error getting package name from APK: ${e.message}")
         }
         return null
+    }
+
+    fun installApkWithPackageInstaller(context: Context, file: FileItem) {
+        val path = file.path
+        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (!path.isArchivePath) path.fileProviderUri else null
+        } else {
+            // PackageInstaller only supports file URI before N.
+            if (path.isLinuxPath) Uri.fromFile(path.toFile()) else null
+        }
+        if (uri != null) {
+            context.startActivitySafe(uri.createInstallPackageIntent())
+        } else {
+            FileJobService.installApk(path, context)
+        }
+    }
+
+    fun installApkWithEsperSDK(context: Context, file: FileItem? = null, path: String? = null) {
+        val pathName = file?.path?.toString() ?: path
+        GeneralUtils.isEsperDeviceSDKActivated(context) { activated ->
+            if (activated) {
+                Log.d(
+                    Constants.FileListFragmentTag,
+                    "installApkWithEsperSDK: Esper Device SDK is activated"
+                )
+                val packageName = pathName?.let { getPackageNameFromApk(context, it) }
+                packageName?.let { it1 ->
+                    GeneralUtils.getEsperSDK(context)
+                        .installApp(it1, pathName, object : EsperDeviceSDK.Callback<Boolean> {
+                            override fun onResponse(p0: Boolean?) {
+                                UiThreadHandler.handler.post {
+                                    Toast.makeText(
+                                        context, "App installed successfully", Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                if (path != null) {
+                                    deleteFile(path)
+                                }
+                            }
+
+                            override fun onFailure(t: Throwable) {
+                                if (file != null) {
+                                    UiThreadHandler.handler.post {
+                                        installApkWithPackageInstaller(context, file)
+                                    }
+                                }
+                            }
+                        })
+                }
+            } else {
+                Log.d(
+                    Constants.FileListFragmentTag,
+                    "installApkWithEsperSDK: Esper Device SDK is not activated, using package installer"
+                )
+                if (file != null) {
+                    installApkWithPackageInstaller(context, file)
+                }
+            }
+        }
+    }
+
+    fun isAppInstalled(context: Context, packageName: String): Boolean {
+        return try {
+            val packageInfo = context.packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
+            packageInfo.applicationInfo.enabled && packageInfo.packageName == packageName
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
+    fun getVersionName(context: Context, packageName: String): String? {
+        return try {
+            val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
+            packageInfo.versionName
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+    }
+
+    fun openApp(mContext: Context, packageName: String): Boolean {
+        try {
+            val i: Intent? = mContext.packageManager.getLaunchIntentForPackage(packageName)
+            mContext.startActivity(i)
+            return true
+        } catch (e: Exception) {
+            Toast.makeText(mContext, "App not available!", Toast.LENGTH_LONG).show()
+            Log.e("Error", "Error opening app: ${e.message}")
+            return false
+        }
     }
 }

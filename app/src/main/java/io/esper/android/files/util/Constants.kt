@@ -64,7 +64,7 @@ object Constants {
     const val MainActivityTag = "MainActivity"
     const val ListItemsFragmentTag = "ListItemsFragment"
     const val FileUtilsTag = "FileUtils"
-    const val VideoViewerActivityTag = "VideoViewerActivity"
+    const val AudioVideoViewerActivityTag = "AudioVideoViewerActivity"
     const val ImageViewerActivityTag = "ImageViewerActivity"
     const val SlideShowActivityTag = "SlideShowActivity"
     const val BottomSheetFragmentTag = "BottomSheetFragment"
@@ -73,6 +73,9 @@ object Constants {
     const val ManagedConfigUtilsTag = "ManagedConfigUtils"
     const val GeneralUtilsTag = "GeneralUtils"
     const val FileListFragmentTag = "FileListFragment"
+    const val PdfViewerFragmentTag = "PdfViewerFragment"
+    const val DlcFragmentTag = "DlcFragment"
+    const val AppStoreFragmentTag = "AppStoreFragment"
 
     // SharedPreference keys
     const val SHARED_LAST_PREFERRED_STORAGE = "LastPrefStorage"
@@ -84,6 +87,7 @@ object Constants {
     const val ESPER_DEVICE_SERIAL = "esperDeviceSerial"
     const val ESPER_DEVICE_IMEI1 = "esperDeviceIMEI1"
     const val ESPER_DEVICE_IMEI2 = "esperDeviceIMEI2"
+    const val ESPER_DEVICE_UUID = "esperDeviceUUID"
 
     const val SHARED_MANAGED_CONFIG_VALUES = "ManagedConfig"
     const val SHARED_MANAGED_CONFIG_APP_NAME = "app_name"
@@ -106,6 +110,9 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT = "auto_upload_content"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT_INTERVAL = "auto_upload_content_interval"
     const val SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS = "show_device_details"
+    const val SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY = "esper_app_store_visibility"
+    const val SHARED_MANAGED_CONFIG_SHOW_ALL_VERSIONS = "show_all_versions"
+    const val SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE = "convert_files_to_app_store"
 
     const val TIME_1_HOUR = 60 * 60 * 1000
     const val TIME_1_DAY = 24 * 60 * 60 * 1000

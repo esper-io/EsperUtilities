@@ -27,6 +27,7 @@ import io.esper.android.files.model.AllContent
 import io.esper.android.files.model.CMItem
 import io.esper.android.files.ui.FixQueryChangeSearchView
 import io.esper.android.files.util.Constants
+import io.esper.android.files.util.Constants.DlcFragmentTag
 import io.esper.android.files.util.GeneralUtils
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -48,7 +49,6 @@ class DlcFragment : Fragment() {
     private var mEmptyDialogView: RelativeLayout? = null
     private lateinit var menuBinding: MenuBinding
     private lateinit var binding: DlcFragmentBinding
-    private val DlcFragmentTag = "DlcFragment"
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -169,7 +169,8 @@ class DlcFragment : Fragment() {
                 .readTimeout(30, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS)
                 .cache(myCache1).addInterceptor { chain ->
                     var request = chain.request()
-                    val hasNetwork = context?.let { GeneralUtils.hasActiveInternetConnection(it) } == true
+                    val hasNetwork =
+                        context?.let { GeneralUtils.hasActiveInternetConnection(it) } == true
                     request = if (hasNetwork) {
                         request.newBuilder().header("Cache-Control", "public, max-age=" + 5).build()
                     } else {
@@ -180,16 +181,10 @@ class DlcFragment : Fragment() {
                     chain.proceed(request)
                 }.build()
 
-            val sharedPrefManaged = requireContext().getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            )
-            val tenant = sharedPrefManaged?.getString(Constants.SHARED_MANAGED_CONFIG_TENANT, null)
-                .toString()
-            val enterprise =
-                sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, null)
-                    .toString()
-            val token = sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
-                .toString()
+            val tenant = GeneralUtils.getTenant(requireContext())
+            val enterprise = GeneralUtils.getEnterpriseId(requireContext())
+            val token = GeneralUtils.getApiKey(requireContext())
+
             val getUrl = "$tenant/api/v0/enterprise/$enterprise/"
             val retrofit = Retrofit.Builder().baseUrl(getUrl)
                 .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
@@ -303,8 +298,7 @@ class DlcFragment : Fragment() {
         if (db.contentDao().getAllContent().isNotEmpty()) {
             if (allowedContent.isNullOrEmpty() || allowedContent.equals("[]")) {
                 Log.d(
-                    DlcFragmentTag,
-                    "$methodDlcFragmentTag: All Content Allowed: size: ${
+                    DlcFragmentTag, "$methodDlcFragmentTag: All Content Allowed: size: ${
                         db.contentDao().getAllContent().size
                     }"
                 )

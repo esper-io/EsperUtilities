@@ -17,6 +17,7 @@ import io.esper.android.files.compat.isPrimaryCompat
 import io.esper.android.files.compat.pathCompat
 import io.esper.android.files.file.JavaFile
 import io.esper.android.files.file.asFileSize
+import io.esper.android.files.filelist.AppStoreActivity
 import io.esper.android.files.filelist.DlcActivity
 import io.esper.android.files.ftpserver.FtpServerActivity
 import io.esper.android.files.settings.Settings
@@ -26,7 +27,6 @@ import io.esper.android.files.storage.AddStorageDialogActivity
 import io.esper.android.files.storage.FileSystemRoot
 import io.esper.android.files.storage.Storage
 import io.esper.android.files.storage.StorageVolumeListLiveData
-import io.esper.android.files.ui.SplashScreenUI
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.isMounted
@@ -38,7 +38,7 @@ import java8.nio.file.Paths
 
 val navigationItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
-        if (GeneralUtils.getDeviceNameFromPrefs(application) != null && GeneralUtils.showDeviceDetails(
+        if (GeneralUtils.getDeviceName(application) != null && GeneralUtils.showDeviceDetails(
                 application
             )
         ) {
@@ -58,6 +58,11 @@ val navigationItems: List<NavigationItem?>
         }
         add(null)
         addAll(menuItems)
+    }
+val navigationBottomListItems: List<NavigationItem?>
+    get() = mutableListOf<NavigationItem?>().apply {
+        add(null)
+        addAll(settingsAndAboutItems)
     }
 
 private val storageItems: List<NavigationItem>
@@ -213,12 +218,12 @@ fun deviceDetailsItem(): NavigationItem {
         override val iconRes: Int = R.drawable.device_icon_white_24dp
 
         override fun getTitle(context: Context): String {
-            return GeneralUtils.getDeviceNameFromPrefs(context)
+            return GeneralUtils.getDeviceName(context)
                 ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
         override fun getSubtitle(context: Context): String {
-            return GeneralUtils.getDeviceSerialFromPrefs(context)
+            return GeneralUtils.getDeviceSerial(context)
                 ?: context.getString(R.string.navigation_device_details_title_unknown)
         }
 
@@ -226,9 +231,8 @@ fun deviceDetailsItem(): NavigationItem {
             clickCount++
             handler.removeCallbacks(resetClickCountRunnable)
             if (clickCount >= requiredClicks) {
-                val intent = Intent(application.applicationContext, SplashScreenUI::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                application.applicationContext.startActivity(intent)
+                // Todo - add required action here
+
                 clickCount = 0
             } else {
                 handler.postDelayed(resetClickCountRunnable, delayMillis)
@@ -397,21 +401,37 @@ private val menuItems: List<NavigationItem>
         if (GeneralUtils.isDlcAllowed(application)) {
             items.add(
                 IntentMenuItem(
-                    R.drawable.download_icon_white_24dp,
+                    R.drawable.dlc_icon,
                     R.string.downloadable_content,
                     DlcActivity::class.createIntent()
+                )
+            )
+        }
+        if (GeneralUtils.isEsperAppStoreVisible(application)) {
+            items.add(
+                IntentMenuItem(
+                    R.drawable.esper_app_store_icon,
+                    R.string.esper_app_store,
+                    AppStoreActivity::class.createIntent()
                 )
             )
         }
         if (GeneralUtils.isFtpServerAllowed(application)) {
             items.add(
                 IntentMenuItem(
-                    R.drawable.shared_directory_icon_white_24dp,
+                    R.drawable.ftp_icon_24,
                     R.string.navigation_ftp_server,
                     FtpServerActivity::class.createIntent()
                 )
             )
         }
+
+        return items
+    }
+
+private val settingsAndAboutItems: List<NavigationItem>
+    get() {
+        val items = mutableListOf<NavigationItem>()
         items.addAll(
             listOf(
                 IntentMenuItem(
@@ -425,10 +445,8 @@ private val menuItems: List<NavigationItem>
                 )
             )
         )
-
         return items
     }
-
 
 private abstract class MenuItem(
     @DrawableRes override val iconRes: Int, @StringRes val titleRes: Int

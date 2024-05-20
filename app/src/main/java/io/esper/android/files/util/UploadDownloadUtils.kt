@@ -104,7 +104,7 @@ object UploadDownloadUtils {
         lifecycleOwner: LifecycleOwner,
         deleteFile: Boolean = false
     ) {
-        if (GeneralUtils.getDeviceNameFromPrefs(
+        if (GeneralUtils.getDeviceName(
                 context
             ) == null) {
             Toast.makeText(context, "Info not available for upload, please set it in the managed config.", Toast.LENGTH_SHORT).show()
