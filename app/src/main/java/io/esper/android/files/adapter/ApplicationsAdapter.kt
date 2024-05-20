@@ -6,11 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -143,9 +141,10 @@ class ApplicationsAdapter : RecyclerView.Adapter<ApplicationsAdapter.ItemViewHol
                         currentItem.package_name!!
                     )
                 }
-                holder.txtItemHeader2.text = "Installed Version: $installedVersion, Latest Version: ${
-                    currentItem.versions!![0].version_code
-                }"
+                holder.txtItemHeader2.text =
+                    "Installed Version: $installedVersion, Latest Version: ${
+                        currentItem.versions!![0].version_code
+                    }"
             } else {
                 holder.installBtn.text = mContext!!.getString(R.string.open)
                 holder.updateBtn.visibility = View.GONE
@@ -171,8 +170,7 @@ class ApplicationsAdapter : RecyclerView.Adapter<ApplicationsAdapter.ItemViewHol
             holder.updateBtn.visibility = View.GONE
             holder.installBtn.setOnClickListener {
                 if (holder.installBtn.text == mContext!!.getString(R.string.open) && !FileUtils.openApp(
-                        mContext!!,
-                        currentItem.package_name!!
+                        mContext!!, currentItem.package_name!!
                     )
                 ) {
                     Toast.makeText(

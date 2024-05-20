@@ -156,7 +156,7 @@ class AppStoreFragment : Fragment() {
         val methodDlcFragmentTag = "getDataFromDb"
         if (db.appDao().getApplications().isNotEmpty()) {
             if (hasValueChanged) {
-                binding.toolbar.subtitle = "${db.appDao().getApplications().size} files"
+                binding.toolbar.subtitle = "${db.appDao().getApplications().size} apps"
                 setEmptyViewVisibility(View.GONE)
                 setRecyclerViewVisibility(View.VISIBLE)
                 mAdapter!!.setAppsListItems(db.appDao().getApplications())
@@ -168,7 +168,7 @@ class AppStoreFragment : Fragment() {
             }
         } else {
             Log.d(AppStoreFragmentTag, "$methodDlcFragmentTag: No Existing Data Found in DB.")
-            binding.toolbar.subtitle = "No files available"
+            binding.toolbar.subtitle = "No apps available"
             setEmptyViewVisibility(View.VISIBLE)
             setRecyclerViewVisibility(View.GONE)
             if (fetchNewAppList) {

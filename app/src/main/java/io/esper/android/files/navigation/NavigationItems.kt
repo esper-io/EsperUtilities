@@ -27,7 +27,6 @@ import io.esper.android.files.storage.AddStorageDialogActivity
 import io.esper.android.files.storage.FileSystemRoot
 import io.esper.android.files.storage.Storage
 import io.esper.android.files.storage.StorageVolumeListLiveData
-import io.esper.android.files.ui.SplashScreenUI
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.isMounted
@@ -227,9 +226,8 @@ fun deviceDetailsItem(): NavigationItem {
             clickCount++
             handler.removeCallbacks(resetClickCountRunnable)
             if (clickCount >= requiredClicks) {
-                val intent = Intent(application.applicationContext, SplashScreenUI::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                application.applicationContext.startActivity(intent)
+                // Todo - add required action here
+
                 clickCount = 0
             } else {
                 handler.postDelayed(resetClickCountRunnable, delayMillis)
@@ -398,7 +396,7 @@ private val menuItems: List<NavigationItem>
         if (GeneralUtils.isDlcAllowed(application)) {
             items.add(
                 IntentMenuItem(
-                    R.drawable.download_icon_white_24dp,
+                    R.drawable.dlc_icon,
                     R.string.downloadable_content,
                     DlcActivity::class.createIntent()
                 )
@@ -416,7 +414,7 @@ private val menuItems: List<NavigationItem>
         if (GeneralUtils.isFtpServerAllowed(application)) {
             items.add(
                 IntentMenuItem(
-                    R.drawable.shared_directory_icon_white_24dp,
+                    R.drawable.ftp_icon_24,
                     R.string.navigation_ftp_server,
                     FtpServerActivity::class.createIntent()
                 )
