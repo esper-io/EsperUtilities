@@ -8,10 +8,11 @@
     <io.esper.android.files.navigation.NavigationRecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
         android:scrollbarStyle="outsideOverlay"
-        android:scrollbars="vertical" />
+        android:scrollbars="vertical"
+        android:layout_above="@+id/recyclerViewBottom"/>
 
     <!-- Second RecyclerView at the bottom -->
     <io.esper.android.files.navigation.NavigationRecyclerView
