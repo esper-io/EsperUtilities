@@ -1,7 +1,6 @@
 package io.esper.android.files.util
 
 import android.os.Environment
-import io.esper.android.files.filelist.AppStoreFragment
 import java.io.File
 
 object Constants {
@@ -65,7 +64,7 @@ object Constants {
     const val MainActivityTag = "MainActivity"
     const val ListItemsFragmentTag = "ListItemsFragment"
     const val FileUtilsTag = "FileUtils"
-    const val VideoViewerActivityTag = "VideoViewerActivity"
+    const val AudioVideoViewerActivityTag = "AudioVideoViewerActivity"
     const val ImageViewerActivityTag = "ImageViewerActivity"
     const val SlideShowActivityTag = "SlideShowActivity"
     const val BottomSheetFragmentTag = "BottomSheetFragment"
@@ -74,6 +73,7 @@ object Constants {
     const val ManagedConfigUtilsTag = "ManagedConfigUtils"
     const val GeneralUtilsTag = "GeneralUtils"
     const val FileListFragmentTag = "FileListFragment"
+    const val PdfViewerFragmentTag = "PdfViewerFragment"
     const val DlcFragmentTag = "DlcFragment"
     const val AppStoreFragmentTag = "AppStoreFragment"
 

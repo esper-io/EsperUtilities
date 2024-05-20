@@ -17,6 +17,7 @@ import java.io.File
 
 class AboutFragment : Fragment() {
     private lateinit var binding: AboutFragmentBinding
+    private var clickCount = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -28,42 +29,37 @@ class AboutFragment : Fragment() {
         val activity = requireActivity() as AppCompatActivity
         activity.setSupportActionBar(binding.toolbar)
         activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        // Todo: un-hide the licenses layout if required.
         binding.licensesLayout.visibility = View.GONE
         binding.licensesLayout.setOnClickListener { LicensesDialogFragment.show(this) }
-        var clickCount = 0
         binding.authorNameLayout.setOnClickListener {
             clickCount++
-            if (clickCount == 6) {
+            if (clickCount == 7) {
                 clickCount = 0
-                val dpcLogFile = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "dpc_logs.zip"
+                Toast.makeText(
+                    requireContext(), "App developed by: Karthik Mohan", Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        val dpcLogFile = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "dpc_logs.zip"
+        )
+        binding.dpcLogsLayout.visibility =
+            dpcLogFile.exists().let { if (it) View.VISIBLE else View.GONE }
+        binding.dpcLogsUpload.setOnClickListener {
+            Log.i("AboutFragment", "DPC logs Available")
+            if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
+                Toast.makeText(requireContext(), "Uploading DPC logs...", Toast.LENGTH_SHORT).show()
+                UploadDownloadUtils.upload(
+                    dpcLogFile.path, dpcLogFile.name, requireContext(), viewLifecycleOwner, true
                 )
-                if (dpcLogFile.exists()) {
-                    Log.i("AboutFragment", "DPC logs Available")
-                    if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
-                        Toast.makeText(requireContext(), "Uploading DPC logs", Toast.LENGTH_SHORT)
-                            .show()
-                        Log.i("AboutFragment", "Uploading DPC logs")
-                        UploadDownloadUtils.upload(
-                            dpcLogFile.path,
-                            dpcLogFile.name,
-                            requireContext(),
-                            viewLifecycleOwner,
-                            true
-                        )
-                    } else {
-                        Toast.makeText(
-                            requireContext(), "No active internet connection", Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "App developed by: Karthik Mohan",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "No active internet connection, try again after sometime.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

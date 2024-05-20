@@ -1,4 +1,4 @@
-package io.esper.android.files.filelist
+package io.esper.android.files.viewer.pdf
 
 import android.content.Intent
 import android.os.Bundle

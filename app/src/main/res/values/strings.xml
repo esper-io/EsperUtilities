@@ -821,4 +821,8 @@
     <string name="update">Update</string>
     <string name="open">Open</string>
     <string name="app_details">App Details</string>
+    <string name="video_viewer_title">Video Viewer</string>
+    <string name="audio_video_viewer_title">Audio Video Viewer</string>
+    <string name="dpcLogsPush">"Upload Esper Agent Logs "</string>
+    <string name="availableDpcLogsPush">Esper Agent Logs Available. Please click here to upload.</string>
 </resources>

@@ -1,4 +1,4 @@
-package io.esper.android.files.filelist
+package io.esper.android.files.viewer.pdf
 
 import android.content.Context
 import android.content.Intent
@@ -30,6 +30,7 @@ import com.shockwave.pdfium.PdfDocument
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
 import io.esper.android.files.R
 import io.esper.android.files.databinding.PdfFragmentBinding
+import io.esper.android.files.util.Constants.PdfViewerFragmentTag
 import io.esper.android.files.util.ParcelableArgs
 import io.esper.android.files.util.args
 import io.esper.android.files.util.extraPathList
@@ -44,7 +45,6 @@ class PdfViewerFragment : Fragment(), OnPageChangeListener, OnPageErrorListener,
     OnLoadCompleteListener, OnErrorListener, OnTapListener {
     private var pdfView: PDFView? = null
     private lateinit var binding: PdfFragmentBinding
-    private val PdfViewerFragmentTag = "PdfViewerFragment"
     private val args by args<Args>()
     private lateinit var systemUiHelper: SystemUiHelper
     private val argsPaths by lazy { args.intent.extraPathList }

@@ -61,6 +61,7 @@ val navigationItems: List<NavigationItem?>
     }
 val navigationBottomListItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
+        add(null)
         addAll(settingsAndAboutItems)
     }
 

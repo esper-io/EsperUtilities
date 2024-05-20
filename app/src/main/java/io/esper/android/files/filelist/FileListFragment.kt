@@ -13,7 +13,6 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
-import android.util.Log
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -25,7 +24,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +45,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
-import com.topjohnwu.superuser.internal.UiThreadHandler.handler
 import io.esper.android.files.R
 import io.esper.android.files.app.application
 import io.esper.android.files.app.clipboardManager
@@ -65,8 +62,10 @@ import io.esper.android.files.file.asMimeTypeOrNull
 import io.esper.android.files.file.extension
 import io.esper.android.files.file.fileProviderUri
 import io.esper.android.files.file.isApk
+import io.esper.android.files.file.isAudio
 import io.esper.android.files.file.isImage
 import io.esper.android.files.file.isPdf
+import io.esper.android.files.file.isVideo
 import io.esper.android.files.filejob.FileJobService
 import io.esper.android.files.filelist.FileSortOptions.By
 import io.esper.android.files.filelist.FileSortOptions.Order
@@ -113,7 +112,6 @@ import io.esper.android.files.util.asFileNameOrNull
 import io.esper.android.files.util.checkSelfPermission
 import io.esper.android.files.util.copyText
 import io.esper.android.files.util.create
-import io.esper.android.files.util.createInstallPackageIntent
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.createManageAppAllFilesAccessPermissionIntent
 import io.esper.android.files.util.createSendStreamIntent
@@ -135,7 +133,8 @@ import io.esper.android.files.util.valueCompat
 import io.esper.android.files.util.viewModels
 import io.esper.android.files.util.withChooser
 import io.esper.android.files.viewer.image.ImageViewerActivity
-import io.esper.devicesdk.EsperDeviceSDK
+import io.esper.android.files.viewer.pdf.PdfViewerActivity
+import io.esper.android.files.viewer.audiovideo.AudioVideoViewerActivity
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import kotlinx.parcelize.Parcelize
@@ -1297,6 +1296,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     extraPath = path
                     maybeAddImageViewerActivityExtras(this, path, mimeType)
                     maybeAddPdfViewerActivityExtras(this, path, mimeType)
+                    maybeAddAudioVideoViewerActivityExtras(this, path, mimeType)
                 }.let {
                     if (withChooser) {
                         it.withChooser(
@@ -1368,6 +1368,36 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         PdfViewerActivity.putExtras(intent, paths, position)
     }
+
+    private fun maybeAddAudioVideoViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {
+        if (!mimeType.isAudio && !mimeType.isVideo) {
+            return
+        }
+
+        var paths = mutableListOf<Path>()
+        // We need the ordered list from our adapter instead of the list from FileListLiveData.
+        for (index in 0..<adapter.itemCount) {
+            val file = adapter.getItem(index)
+            val filePath = file.path
+            if (filePath == path) {
+                paths.add(filePath)
+            }
+        }
+        var position = paths.indexOf(path)
+        if (position == -1) {
+            return
+        }
+        // HACK: Don't send too many paths to avoid TransactionTooLargeException.
+        if (paths.size > VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
+            val start = (position - VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
+                0, paths.size - VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
+            )
+            paths = paths.subList(start, start + VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
+            position -= start
+        }
+        AudioVideoViewerActivity.putExtras(intent, paths, position)
+    }
+
 
     override fun cutFile(file: FileItem) {
         cutFiles(fileItemSetOf(file))
@@ -1753,6 +1783,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
         private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
         private const val PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
+        private const val VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {
