@@ -16,6 +16,7 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
     private lateinit var binding: NavigationFragmentBinding
 
     private lateinit var adapter: NavigationListAdapter
+    private lateinit var adapterBottom: NavigationListAdapterBottom
 
     lateinit var listener: Listener
 
@@ -32,20 +33,34 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
         super.onActivityCreated(savedInstanceState)
 
         binding.recyclerView.setHasFixedSize(true)
+
+        binding.recyclerViewBottom.setHasFixedSize(true)
+
         // TODO: Needed?
         //binding.recyclerView.setItemAnimator(new NoChangeAnimationItemAnimator())
+
         val context = requireContext()
         binding.recyclerView.layoutManager = LinearLayoutManager(context)
         adapter = NavigationListAdapter(this, context)
         binding.recyclerView.adapter = adapter
 
+        binding.recyclerViewBottom.layoutManager = LinearLayoutManager(context)
+        adapterBottom = NavigationListAdapterBottom(this, context)
+        binding.recyclerViewBottom.adapter = adapterBottom
+
         val viewLifecycleOwner = viewLifecycleOwner
         NavigationItemListLiveData.observe(viewLifecycleOwner) { onNavigationItemsChanged(it) }
         listener.observeCurrentPath(viewLifecycleOwner) { onCurrentPathChanged(it) }
+
+        NavigationItemBottomListLiveData.observe(viewLifecycleOwner) { onNavigationBottomItemsChanged(it) }
     }
 
     private fun onNavigationItemsChanged(navigationItems: List<NavigationItem?>) {
         adapter.replace(navigationItems)
+    }
+
+    private fun onNavigationBottomItemsChanged(navigationItems: List<NavigationItem?>) {
+        adapterBottom.replace(navigationItems)
     }
 
     private fun onCurrentPathChanged(path: Path) {

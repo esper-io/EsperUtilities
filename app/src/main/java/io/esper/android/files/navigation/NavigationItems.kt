@@ -59,6 +59,10 @@ val navigationItems: List<NavigationItem?>
         add(null)
         addAll(menuItems)
     }
+val navigationBottomListItems: List<NavigationItem?>
+    get() = mutableListOf<NavigationItem?>().apply {
+        addAll(settingsAndAboutItems)
+    }
 
 private val storageItems: List<NavigationItem>
     @Size(min = 0) get() = Settings.STORAGES.valueCompat.filter { it.isVisible }.map {
@@ -420,6 +424,13 @@ private val menuItems: List<NavigationItem>
                 )
             )
         }
+
+        return items
+    }
+
+private val settingsAndAboutItems: List<NavigationItem>
+    get() {
+        val items = mutableListOf<NavigationItem>()
         items.addAll(
             listOf(
                 IntentMenuItem(
@@ -433,10 +444,8 @@ private val menuItems: List<NavigationItem>
                 )
             )
         )
-
         return items
     }
-
 
 private abstract class MenuItem(
     @DrawableRes override val iconRes: Int, @StringRes val titleRes: Int
