@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.annotation.MainThread
 import io.esper.android.files.file.MimeType
 import io.esper.android.files.provider.common.PosixFileModeBit
@@ -197,8 +198,12 @@ class FileJobService : Service() {
         }
 
         fun createDirectory(path: String) {
-            val fileDirectory = File(path)
-            if (!fileDirectory.exists()) fileDirectory.mkdir()
+            try {
+                val fileDirectory = File(path)
+                if (!fileDirectory.exists()) fileDirectory.mkdir()
+            } catch (e: Exception) {
+                Log.e("FileJobService", "Error creating directory: $path", e)
+            }
         }
     }
 }
