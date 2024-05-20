@@ -34,6 +34,7 @@ class AboutFragment : Fragment() {
         binding.authorNameLayout.setOnClickListener {
             clickCount++
             if (clickCount == 6) {
+                clickCount = 0
                 val dpcLogFile = File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                     "dpc_logs.zip"
