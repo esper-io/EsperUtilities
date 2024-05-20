@@ -94,7 +94,7 @@ class AudioVideoViewerFragment : Fragment() {
         }
 
         player!!.addListener(playerListener)
-        player!!.setMediaItem(MediaItem.fromUri(Uri.parse(argsPaths[0].toString())))
+        player!!.setMediaItems(argsPaths.map { MediaItem.fromUri(Uri.parse(it.toString())) }, false)
         player!!.prepare()
         player!!.seekTo(playerPosition)
         player!!.play()

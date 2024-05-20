@@ -37,7 +37,7 @@ class AboutFragment : Fragment() {
             if (clickCount == 7) {
                 clickCount = 0
                 Toast.makeText(
-                    requireContext(), "App developed by: Karthik Mohan", Toast.LENGTH_SHORT
+                    requireContext(), "App developed by: Karthik", Toast.LENGTH_SHORT
                 ).show()
             }
         }

@@ -21,12 +21,9 @@ class LicensesDialogFragment : AppCompatDialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        notices = if (savedInstanceState != null) {
-            savedInstanceState.getState<State>().notices
-        } else {
-            NoticesXmlParser.parse(resources.openRawResource(R.raw.licenses))
+        notices = savedInstanceState?.getState<State>()?.notices
+            ?: NoticesXmlParser.parse(resources.openRawResource(R.raw.licenses))
                 .apply { addNotice(LicensesDialog.LICENSES_DIALOG_NOTICE) }
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

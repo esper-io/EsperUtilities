@@ -61,7 +61,8 @@ val navigationItems: List<NavigationItem?>
     }
 val navigationBottomListItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
-        add(null)
+        // Todo: Uncomment if required
+//        add(null)
         addAll(settingsAndAboutItems)
     }
 

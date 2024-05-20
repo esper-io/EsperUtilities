@@ -94,7 +94,6 @@ import io.esper.android.files.ui.ThemedFastScroller
 import io.esper.android.files.ui.ToolbarActionMode
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.DebouncedRunnable
-import io.esper.android.files.util.UploadDownloadUtils
 import io.esper.android.files.util.Failure
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.FileUtils.installApkWithEsperSDK
@@ -105,6 +104,7 @@ import io.esper.android.files.util.ManagedConfigUtils
 import io.esper.android.files.util.ParcelableArgs
 import io.esper.android.files.util.Stateful
 import io.esper.android.files.util.Success
+import io.esper.android.files.util.UploadDownloadUtils
 import io.esper.android.files.util.addOnBackPressedCallback
 import io.esper.android.files.util.args
 import io.esper.android.files.util.asFileName
@@ -132,9 +132,9 @@ import io.esper.android.files.util.takeIfNotEmpty
 import io.esper.android.files.util.valueCompat
 import io.esper.android.files.util.viewModels
 import io.esper.android.files.util.withChooser
+import io.esper.android.files.viewer.audiovideo.AudioVideoViewerActivity
 import io.esper.android.files.viewer.image.ImageViewerActivity
 import io.esper.android.files.viewer.pdf.PdfViewerActivity
-import io.esper.android.files.viewer.audiovideo.AudioVideoViewerActivity
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import kotlinx.parcelize.Parcelize
@@ -1369,17 +1369,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         PdfViewerActivity.putExtras(intent, paths, position)
     }
 
-    private fun maybeAddAudioVideoViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {
+    private fun maybeAddAudioVideoViewerActivityExtras(
+        intent: Intent,
+        path: Path,
+        mimeType: MimeType
+    ) {
         if (!mimeType.isAudio && !mimeType.isVideo) {
             return
         }
-
         var paths = mutableListOf<Path>()
         // We need the ordered list from our adapter instead of the list from FileListLiveData.
         for (index in 0..<adapter.itemCount) {
             val file = adapter.getItem(index)
             val filePath = file.path
-            if (filePath == path) {
+            if (file.mimeType.isAudio || file.mimeType.isVideo || filePath == path) {
                 paths.add(filePath)
             }
         }
@@ -1388,11 +1391,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         // HACK: Don't send too many paths to avoid TransactionTooLargeException.
-        if (paths.size > VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
-            val start = (position - VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
-                0, paths.size - VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
+        if (paths.size > AUDIO_VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
+            val start = (position - AUDIO_VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2).coerceIn(
+                0, paths.size - AUDIO_VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX
             )
-            paths = paths.subList(start, start + VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
+            paths = paths.subList(start, start + AUDIO_VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
             position -= start
         }
         AudioVideoViewerActivity.putExtras(intent, paths, position)
@@ -1471,7 +1474,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         ) {
             val path = currentPath
             UploadDownloadUtils.Compress(
-                context, path.toString(), GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip", this, sharedPrefManaged
+                context,
+                path.toString(),
+                GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
+                this,
+                sharedPrefManaged
             ).execute()
         } else {
             showToast(R.string.upload_disabled)
@@ -1783,7 +1790,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
         private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
         private const val PDF_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
-        private const val VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
+        private const val AUDIO_VIDEO_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {
