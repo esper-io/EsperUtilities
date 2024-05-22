@@ -132,14 +132,18 @@ class ApplicationsAdapter : RecyclerView.Adapter<ApplicationsAdapter.ItemViewHol
                 }
                 holder.updateBtn.visibility = View.VISIBLE
                 holder.updateBtn.setOnClickListener {
-                    downloadApk(
-                        holder.installBtn,
-                        holder.updateBtn,
-                        holder.btnLayout,
-                        holder.progressBtn,
-                        currentItem.versions!![0].download_url.toString(),
-                        currentItem.package_name!!
-                    )
+                    if (GeneralUtils.hasActiveInternetConnection(mContext!!)) {
+                        downloadApk(
+                            holder.installBtn,
+                            holder.updateBtn,
+                            holder.btnLayout,
+                            holder.progressBtn,
+                            currentItem.versions!![0].download_url.toString(),
+                            currentItem.package_name!!
+                        )
+                    } else {
+                        GeneralUtils.showNoInternetDialog(mContext!!)
+                    }
                 }
                 holder.txtItemHeader2.text =
                     "Installed Version: $installedVersion, Latest Version: ${
@@ -177,14 +181,18 @@ class ApplicationsAdapter : RecyclerView.Adapter<ApplicationsAdapter.ItemViewHol
                         mContext, "App not installed properly. Reinstalling...", Toast.LENGTH_LONG
                     ).show()
                 }
-                downloadApk(
-                    holder.installBtn,
-                    null,
-                    holder.btnLayout,
-                    holder.progressBtn,
-                    currentItem.versions!![0].download_url.toString(),
-                    currentItem.package_name!!
-                )
+                if (GeneralUtils.hasActiveInternetConnection(mContext!!)) {
+                    downloadApk(
+                        holder.installBtn,
+                        null,
+                        holder.btnLayout,
+                        holder.progressBtn,
+                        currentItem.versions!![0].download_url.toString(),
+                        currentItem.package_name!!
+                    )
+                } else {
+                    GeneralUtils.showNoInternetDialog(mContext!!)
+                }
             }
         }
 

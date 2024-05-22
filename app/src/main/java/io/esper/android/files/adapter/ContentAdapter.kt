@@ -19,7 +19,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.downloadservice.filedownloadservice.manager.FileDownloadManager
 import io.esper.android.files.R
 import io.esper.android.files.compat.isSingleLineCompat
 import io.esper.android.files.model.AllContent
@@ -202,12 +201,17 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
 //                )
 //                return@setOnClickListener
 //            }
-            holder.downloadBtn.isEnabled = false
-            holder.downloadImg.setImageResource(R.drawable.ic_complete)
-            mContext?.let { it1 ->
-                UploadDownloadUtils.startDownload(
-                    it1,
-                    currentItem)
+            if (GeneralUtils.hasActiveInternetConnection(mContext!!)) {
+                holder.downloadBtn.isEnabled = false
+                holder.downloadImg.setImageResource(R.drawable.ic_complete)
+                mContext?.let { it1 ->
+                    UploadDownloadUtils.startDownload(
+                        it1,
+                        currentItem
+                    )
+                }
+            } else {
+                GeneralUtils.showNoInternetDialog(mContext!!)
             }
         }
         GeneralUtils.setFadeAnimation(holder.itemView)

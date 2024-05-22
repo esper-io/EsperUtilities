@@ -98,6 +98,8 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_USE_INBUILT_IMAGE = "inbuilt_image"
     const val SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD = "on_demand_download"
     const val SHARED_MANAGED_CONFIG_TENANT = "tenant"
+    // only used locally for now
+    const val SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER = "tenant_for_network_tester"
     const val SHARED_MANAGED_CONFIG_ENTERPRISE_ID = "enterprise_id"
     const val SHARED_MANAGED_CONFIG_API_KEY = "api_key"
     const val SHARED_MANAGED_CONFIG_UPLOAD_CONTENT = "upload_content"
@@ -110,9 +112,12 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT = "auto_upload_content"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT_INTERVAL = "auto_upload_content_interval"
     const val SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS = "show_device_details"
-    const val SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY = "esper_app_store_visibility"
     const val SHARED_MANAGED_CONFIG_SHOW_ALL_VERSIONS = "show_all_versions"
+    const val SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY = "esper_app_store_visibility"
     const val SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE = "convert_files_to_app_store"
+    const val SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY = "network_tester_visibility"
+    const val SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER =
+        "convert_files_to_network_tester"
 
     const val TIME_1_HOUR = 60 * 60 * 1000
     const val TIME_1_DAY = 24 * 60 * 60 * 1000

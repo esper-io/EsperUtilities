@@ -15,6 +15,9 @@ import android.util.Log
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.inputmethod.InputMethodManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.filelist.FileListFragment
 import io.esper.devicesdk.EsperDeviceSDK
@@ -131,6 +134,12 @@ object GeneralUtils {
         return context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, false)
+    }
+
+    fun isNetworkTesterVisible(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false)
     }
 
     fun showDeviceDetails(context: Context): Boolean {
@@ -367,5 +376,67 @@ object GeneralUtils {
         return context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         ).getString(Constants.ESPER_DEVICE_UUID, null)
+    }
+
+    fun showNoInternetDialog(context: Context, finishActivity: Boolean = false) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle("No Internet Connection")
+            .setMessage("Please check your internet connection and try again.")
+            .setCancelable(false)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+                if (finishActivity) {
+                    (context as? Activity)?.finish()
+                }
+            }
+            .show()
+    }
+
+    fun showTenantDialog(context: Context, onInputReceived: (String) -> Unit) {
+        // Create a TextInputLayout to hold the TextInputEditText
+        val textInputLayout = TextInputLayout(context).apply {
+            hint = "Enter tenant name"
+            setPadding(20, 0, 20, 0)
+        }
+
+        // Create a TextInputEditText
+        val editText = TextInputEditText(context)
+        textInputLayout.addView(editText)
+
+        // Create and show the dialog
+        MaterialAlertDialogBuilder(context).setTitle("Tenant Input").setView(textInputLayout)
+            .setPositiveButton("OK") { dialog, _ ->
+                val tenantInput = editText.text.toString()
+                // Pass the input to the callback
+                onInputReceived(tenantInput)
+                dialog.dismiss()
+            }.setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }.show()
+    }
+
+    fun saveTenantForNetworkTester(context: Context, tenantInput: String) {
+        context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit().putString(Constants.SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER, tenantInput)
+            .apply()
+    }
+
+    fun getTenantForNetworkTester(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER, null)
+    }
+
+    fun getTargetFromUrl(url: String): String? {
+        val parts = url.split(".")
+        if (parts.isNotEmpty()) {
+            val subdomain = parts[0].replace("https://", "")
+            if (subdomain.contains("-")) {
+                return subdomain.split("-")[0]
+            }
+            return subdomain
+        }
+        return null
     }
 }

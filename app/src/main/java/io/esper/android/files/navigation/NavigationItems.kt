@@ -33,6 +33,7 @@ import io.esper.android.files.util.isMounted
 import io.esper.android.files.util.putArgs
 import io.esper.android.files.util.supportsExternalStorageManager
 import io.esper.android.files.util.valueCompat
+import io.esper.android.network.NetworkTesterActivity
 import java8.nio.file.Path
 import java8.nio.file.Paths
 
@@ -423,6 +424,15 @@ private val menuItems: List<NavigationItem>
                     R.drawable.ftp_icon_24,
                     R.string.navigation_ftp_server,
                     FtpServerActivity::class.createIntent()
+                )
+            )
+        }
+        if (GeneralUtils.isNetworkTesterVisible(application)) {
+            items.add(
+                IntentMenuItem(
+                    R.drawable.network_tester_icon,
+                    R.string.network_tester_title,
+                    NetworkTesterActivity::class.createIntent()
                 )
             )
         }

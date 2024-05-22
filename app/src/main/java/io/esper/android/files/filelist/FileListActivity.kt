@@ -17,6 +17,7 @@ import io.esper.android.files.util.ManagedConfigUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.extraPath
 import io.esper.android.files.util.putArgs
+import io.esper.android.network.NetworkTesterActivity
 import java8.nio.file.Path
 
 class FileListActivity : AppActivity() {
@@ -41,6 +42,13 @@ class FileListActivity : AppActivity() {
         // Check if the files app need to be converted to app store
         if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false)) {
             startActivity(AppStoreActivity::class.createIntent())
+            finish()
+            return
+        }
+
+        // Check if the files app need to be converted to network tester
+        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false)) {
+            startActivity(NetworkTesterActivity::class.createIntent())
             finish()
             return
         }

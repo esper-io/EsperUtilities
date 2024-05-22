@@ -101,12 +101,18 @@ object ManagedConfigUtils {
         val convertFilesToAppStore = convertFilesToAppStoreManagedConfig(
             context, appRestrictions, sharedPrefManaged
         )
+        val showNetworkTester = showNetworkTesterManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
+        val convertFilesToNetworkTester = convertFilesToNetworkTesterManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
 
         if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester) {
             if (!apiKeyChange) {
                 Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
@@ -451,8 +457,7 @@ object ManagedConfigUtils {
                 Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE
             ) else false
         val changeInValue = convertFilesToAppStore != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE,
-            false
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false
         )
         if (changeInValue) {
             sharedPrefManaged.edit().putBoolean(
@@ -463,4 +468,48 @@ object ManagedConfigUtils {
         }
         return result
     }
+
+    private fun showNetworkTesterManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val showNetworkTester =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY
+            ) else false
+        val changeInValue = showNetworkTester != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, showNetworkTester
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Network Tester Visibility Changed")
+        }
+        return result
+    }
+
+    private fun convertFilesToNetworkTesterManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val convertFilesToNetworkTester =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER
+            ) else false
+        val changeInValue = convertFilesToNetworkTester != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
+                convertFilesToNetworkTester
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To Network Tester Changed")
+        }
+        return result
+    }
+
 }

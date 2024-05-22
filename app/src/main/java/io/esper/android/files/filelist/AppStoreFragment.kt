@@ -32,7 +32,6 @@ import io.esper.android.files.util.GeneralUtils.hideKeyboard
 import io.esper.appstore.model.AllApps
 import io.esper.appstore.model.AppData1
 import io.esper.appstore.model.ApplicationsInfo
-import io.esper.appstore.model.ApplicationsInfo2
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -223,97 +222,109 @@ class AppStoreFragment : Fragment() {
     }
 
     private fun getAllApplications() {
-        startRefreshAnim()
-        val cacheSize1 = (5 * 1024 * 1024).toLong()
-        val myCache1 = Cache(requireContext().cacheDir, cacheSize1)
-        val okHttpClient = OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
-            .readTimeout(30, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS).cache(myCache1)
-            .addInterceptor { chain ->
-                var request = chain.request()
-                request =
-                    if (GeneralUtils.hasActiveInternetConnection(requireContext())) request.newBuilder()
-                        .header("Cache-Control", "public, max-age=" + 5).build()
-                    else request.newBuilder().header(
-                        "Cache-Control", "public, only-if-cached, max-stale=" + 60 * 60 * 24 * 7
-                    ).build()
-                chain.proceed(request)
-            }.build()
+        try {
+            startRefreshAnim()
+            val cacheSize1 = (5 * 1024 * 1024).toLong()
+            val myCache1 = Cache(requireContext().cacheDir, cacheSize1)
+            val okHttpClient = OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
+                .readTimeout(30, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS)
+                .cache(myCache1)
+                .addInterceptor { chain ->
+                    var request = chain.request()
+                    request =
+                        if (GeneralUtils.hasActiveInternetConnection(requireContext())) request.newBuilder()
+                            .header("Cache-Control", "public, max-age=" + 5).build()
+                        else request.newBuilder().header(
+                            "Cache-Control", "public, only-if-cached, max-stale=" + 60 * 60 * 24 * 7
+                        ).build()
+                    chain.proceed(request)
+                }.build()
 
-        val tenant = GeneralUtils.getTenant(requireContext())
-        val enterprise = GeneralUtils.getEnterpriseId(requireContext())
-        val token = GeneralUtils.getApiKey(requireContext())
+            val tenant = GeneralUtils.getTenant(requireContext())
+            val enterprise = GeneralUtils.getEnterpriseId(requireContext())
+            val token = GeneralUtils.getApiKey(requireContext())
 
-        val getUrl = "$tenant/api/v0/enterprise/$enterprise/"
+            val getUrl = "$tenant/api/v0/enterprise/$enterprise/"
 
-        val retrofit =
-            Retrofit.Builder().baseUrl(getUrl).addConverterFactory(GsonConverterFactory.create())
-                .client(okHttpClient).build()
-        val request = retrofit.create(EsperEndpoints::class.java)
+            val retrofit =
+                Retrofit.Builder().baseUrl(getUrl)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(okHttpClient).build()
+            val request = retrofit.create(EsperEndpoints::class.java)
 
-        request.getAllApplications("Bearer $token", false, 50, offset)
-            .enqueue(object : Callback<ApplicationsInfo> {
-                override fun onResponse(
-                    call: Call<ApplicationsInfo>, response: Response<ApplicationsInfo>
-                ) {
-                    if (response.isSuccessful) {
-                        if (response.body() != null) {
-                            mAppsList?.addAll(response.body()?.results!!)
-                            if (response.body()!!.next != null) {
-                                offset += 50
-                                getAllApplications()
-                            } else {
-                                val dataChanged = AppRepository.hasAllAppsChanged(
-                                    db!!.appDao().getApplications(), mAppsList!!
-                                )
-                                if (dataChanged) {
-                                    db!!.appDao().deleteAll()
-                                    for (element in mAppsList!!) {
-                                        db!!.appDao().insert(element)
+            request.getAllApplications("Bearer $token", false, 50, offset)
+                .enqueue(object : Callback<ApplicationsInfo> {
+                    override fun onResponse(
+                        call: Call<ApplicationsInfo>, response: Response<ApplicationsInfo>
+                    ) {
+                        if (response.isSuccessful) {
+                            if (response.body() != null) {
+                                mAppsList?.addAll(response.body()?.results!!)
+                                if (response.body()!!.next != null) {
+                                    offset += 50
+                                    getAllApplications()
+                                } else {
+                                    val dataChanged = AppRepository.hasAllAppsChanged(
+                                        db!!.appDao().getApplications(), mAppsList!!
+                                    )
+                                    if (dataChanged) {
+                                        db!!.appDao().deleteAll()
+                                        for (element in mAppsList!!) {
+                                            db!!.appDao().insert(element)
+                                        }
                                     }
+                                    mAppsList?.clear()
+                                    getDataFromDb(db!!, false, dataChanged)
+                                    stopRefreshAnim()
                                 }
-                                mAppsList?.clear()
-                                getDataFromDb(db!!, false, dataChanged)
-                                stopRefreshAnim()
                             }
-                        }
-                    } else {
-                        stopRefreshAnim()
-                        when (response.code()) {
-                            400 -> Toast.makeText(
-                                requireContext(), "Data Not Found. Try Later.", Toast.LENGTH_SHORT
-                            ).show()
-
-                            401 -> Toast.makeText(
-                                requireContext(),
-                                "Authorization Failure. Try Later.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            404 -> Toast.makeText(
-                                requireContext(), "Data Not Found. Try Later", Toast.LENGTH_SHORT
-                            ).show()
-
-                            500 -> Toast.makeText(
-                                requireContext(),
-                                "Server Broken. Please Try Again Later",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            else -> {
-                                Toast.makeText(
-                                    requireContext(), R.string.network_issue, Toast.LENGTH_SHORT
+                        } else {
+                            stopRefreshAnim()
+                            when (response.code()) {
+                                400 -> Toast.makeText(
+                                    requireContext(),
+                                    "Data Not Found. Try Later.",
+                                    Toast.LENGTH_SHORT
                                 ).show()
+
+                                401 -> Toast.makeText(
+                                    requireContext(),
+                                    "Authorization Failure. Try Later.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                404 -> Toast.makeText(
+                                    requireContext(),
+                                    "Data Not Found. Try Later",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                500 -> Toast.makeText(
+                                    requireContext(),
+                                    "Server Broken. Please Try Again Later",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                else -> {
+                                    Toast.makeText(
+                                        requireContext(), R.string.network_issue, Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         }
                     }
-                }
 
-                override fun onFailure(call: Call<ApplicationsInfo>, t: Throwable) {
-                    stopRefreshAnim()
-                    Toast.makeText(
-                        requireContext(), "Couldn't load Data. Error!", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            })
+                    override fun onFailure(call: Call<ApplicationsInfo>, t: Throwable) {
+                        stopRefreshAnim()
+                        Toast.makeText(
+                            requireContext(), "Couldn't load Data. Error!", Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                })
+        } catch (e: Exception) {
+            stopRefreshAnim()
+            Log.d(AppStoreFragmentTag, "getAllApplications: ${e.message}")
+            stopRefreshAnim()
+        }
     }
 }

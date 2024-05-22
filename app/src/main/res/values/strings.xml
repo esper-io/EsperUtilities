@@ -825,4 +825,6 @@
     <string name="audio_video_viewer_title">Audio Video Viewer</string>
     <string name="dpcLogsPush">"Upload Esper Agent Logs "</string>
     <string name="availableDpcLogsPush">Esper Agent Logs Available. Please click here to upload.</string>
+    <string name="network_tester_title">Network Tester</string>
+    <string name="network_tester_subtitle">Successful pings: %d, Failed pings: %d</string>
 </resources>
