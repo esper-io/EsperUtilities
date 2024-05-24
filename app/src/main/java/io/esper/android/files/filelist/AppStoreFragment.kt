@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit
 class AppStoreFragment : Fragment() {
     private var mAppsList: MutableList<AllApps>? = ArrayList()
     private var mAppsInstalledList: MutableList<AppData1>? = ArrayList()
+    private var progressDialog: AlertDialog? = null
     private var sharedPrefManaged: SharedPreferences? = null
     private var mAdapter: ApplicationsAdapter? = null
     private var db: AppDb? = null
@@ -153,6 +155,7 @@ class AppStoreFragment : Fragment() {
         db: AppDb, fetchNewAppList: Boolean = true, hasValueChanged: Boolean = true
     ) {
         val methodDlcFragmentTag = "getDataFromDb"
+        progressDialog?.let { GeneralUtils.dismissMaterialLoadingDialog(it) }
         if (db.appDao().getApplications().isNotEmpty()) {
             if (hasValueChanged) {
                 binding.toolbar.subtitle = "${db.appDao().getApplications().size} apps"
@@ -168,6 +171,7 @@ class AppStoreFragment : Fragment() {
         } else {
             Log.d(AppStoreFragmentTag, "$methodDlcFragmentTag: No Existing Data Found in DB.")
             binding.toolbar.subtitle = "No apps available"
+            progressDialog = context?.let { GeneralUtils.showMaterialLoadingDialog(it) }
             setEmptyViewVisibility(View.VISIBLE)
             setRecyclerViewVisibility(View.GONE)
             if (fetchNewAppList) {

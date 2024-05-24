@@ -35,7 +35,7 @@ class NetworkResultAdapter(private val resultItems: List<ResultItem>) :
 
         fun bind(resultItem: ResultItem) {
             textViewUrl.text = "${resultItem.url}:${resultItem.port}"
-            textViewUrl.isSelected = true  // This is necessary to start marquee
+            textViewUrl.isSelected = true
 
             if (resultItem.isAccessible) {
                 imageViewStatus.setImageResource(R.drawable.success_icon)

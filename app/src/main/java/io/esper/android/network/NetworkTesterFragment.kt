@@ -1,6 +1,8 @@
 package io.esper.android.network
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -8,17 +10,19 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.esper.android.files.R
 import io.esper.android.files.databinding.NetworkTesterFragmentBinding
+import io.esper.android.files.util.Constants
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.network.model.ResultItem
 import kotlinx.coroutines.launch
 
-class NetworkTesterFragment : Fragment() {
+class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
     private lateinit var networkResultAdapter: NetworkResultAdapter
     private val resultItems = mutableListOf<ResultItem>()
     private lateinit var menuBinding: MenuBinding
@@ -37,7 +41,16 @@ class NetworkTesterFragment : Fragment() {
         val activity = requireActivity() as AppCompatActivity
         activity.setSupportActionBar(binding.toolbar)
         activity.title = getString(R.string.network_tester_title)
-        activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        val sharedPrefManaged = requireContext().getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        )
+        if (!sharedPrefManaged!!.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
+                false
+            )
+        ) {
+            activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        }
         setHasOptionsMenu(true)
         view?.let { init(it) }
     }
@@ -55,22 +68,37 @@ class NetworkTesterFragment : Fragment() {
 
         menuBinding = MenuBinding.inflate(menu, inflater)
 
+        initTenant()
+    }
+
+    private fun initTenant() {
+        progressBar.visibility = View.GONE
+        menuBinding.refreshItem.isEnabled = false
         if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
-            if (GeneralUtils.getTenant(requireContext()) == null) {
-                GeneralUtils.showTenantDialog(requireContext()) { tenantInput ->
+            if (GeneralUtils.useCustomTenantForNetworkTester(requireContext())) {
+                GeneralUtils.showTenantDialog(requireContext()) { tenantInput, streamerAvailable ->
+                    if (tenantInput.isEmpty()) {
+                        initTenant()
+                        return@showTenantDialog
+                    }
                     GeneralUtils.saveTenantForNetworkTester(requireContext(), tenantInput)
-                    Thread.sleep(1000)
-                    refreshData()
+                    GeneralUtils.setStreamerAvailability(requireContext(), streamerAvailable)
+                    progressBar.visibility = View.VISIBLE
+                    GeneralUtils.fetchAndStoreBaseStackName(requireContext(), tenantInput, this)
                 }
-                return
             } else {
-                val tenantName = GeneralUtils.getTenant(requireContext())
-                    ?.let { GeneralUtils.getTargetFromUrl(it) }
-                tenantName?.let { GeneralUtils.saveTenantForNetworkTester(requireContext(), it) }
-                Thread.sleep(1000)
-                refreshData()
+                val tenant = context?.let { GeneralUtils.getTenant(it) }
+                val tenantInput = tenant?.let { GeneralUtils.getTargetFromUrl(it) }
+                tenantInput?.let { GeneralUtils.saveTenantForNetworkTester(requireContext(), it) }
+                GeneralUtils.setStreamerAvailability(requireContext(), false)
+                progressBar.visibility = View.VISIBLE
+                tenantInput?.let {
+                    GeneralUtils.fetchAndStoreBaseStackName(requireContext(),
+                        it, this)
+                }
             }
         } else {
+            menuBinding.refreshItem.isEnabled = false
             GeneralUtils.showNoInternetDialog(requireContext(), true)
         }
     }
@@ -135,5 +163,25 @@ class NetworkTesterFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         networkCheckTask?.cancel()
+    }
+
+    override fun onBaseStackNameFetched(baseStackName: String) {
+        progressBar.visibility = View.GONE
+        refreshData()
+    }
+
+    override fun onError(e: Exception) {
+        Log.e(Constants.NetworkTesterFragmentTag, "Error fetching base stack name", e)
+        if (e.message?.contains("No data found") == true) {
+            Toast.makeText(context, R.string.tenant_not_available, Toast.LENGTH_LONG).show()
+            initTenant()
+        } else {
+            progressBar.visibility = View.GONE
+            Toast.makeText(context, R.string.stack_details_not_available, Toast.LENGTH_LONG).show()
+            GeneralUtils.showStackDialog(requireContext()) { stackInput ->
+                GeneralUtils.setBaseStackName(requireContext(), stackInput)
+                refreshData()
+            }
+        }
     }
 }

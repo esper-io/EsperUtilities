@@ -45,6 +45,32 @@ object ManagedConfigUtils {
 //        "esper_app_store_visibility": true
 //        //(default: false)
 //        "convert_files_to_app_store": true
+//        //(default: false)
+//        "network_tester_visibility": true
+//        //(default: false)
+//        "convert_files_to_network_tester": true
+//    }
+
+// Sample Json
+//    {
+//        "app_name": "Files",
+//        "show_screenshots_folder": true,
+//        "deletion_allowed": true,
+//        "on_demand_download": true,
+//        "api_key": "",
+//        "upload_content": true,
+//        "internal_root_path": "/storage/emulated/0/esperfiles",
+//        "external_root_path": "/storage/SD-CARD/esperfiles/",
+//        "sharing_allowed": true,
+//        "creation_allowed": true,
+//        "add_storage": true,
+//        "ftp_allowed": true,
+//        "show_device_details": true,
+//        "esper_app_store_visibility": true,
+//        "convert_files_to_app_store": true,
+//        "network_tester_visibility": true,
+//        "convert_files_to_network_tester": true,
+//        "use_custom_tenant_for_network_tester": true
 //    }
 
     private fun startManagedConfigValuesReceiver(
@@ -107,12 +133,15 @@ object ManagedConfigUtils {
         val convertFilesToNetworkTester = convertFilesToNetworkTesterManagedConfig(
             context, appRestrictions, sharedPrefManaged
         )
+        val useCustomTenantForNetworkTester = useCustomTenantForNetworkTesterManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
 
         if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester) {
             if (!apiKeyChange) {
                 Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
@@ -512,4 +541,25 @@ object ManagedConfigUtils {
         return result
     }
 
+    private fun useCustomTenantForNetworkTesterManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val useCustomTenant =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER
+            ) else false
+        val changeInValue = useCustomTenant != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER,
+                useCustomTenant
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Custom Tenant For Network Tester Changed")
+        }
+        return result
+    }
 }

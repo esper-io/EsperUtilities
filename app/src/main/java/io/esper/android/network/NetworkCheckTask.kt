@@ -1,5 +1,7 @@
 package io.esper.android.network
 
+import io.esper.android.files.app.application
+import io.esper.android.files.util.GeneralUtils
 import io.esper.android.network.model.ResultItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,55 +87,43 @@ class NetworkCheckTask(
     }
 
     private val itemsToCheck = listOf(
-        ResultItem("*.amazonaws.com", 443, false),
-        ResultItem("mqtt.shoonyacloud.com", 1883, false),
+        if (GeneralUtils.isStreamerAvailable(application)) {
+            ResultItem("streamer.esper.io", 443, false)
+        } else {
+            if (!GeneralUtils.getBaseStackName(application).isNullOrEmpty()) {
+                ResultItem(
+                    "scapi-${GeneralUtils.getBaseStackName(application)}-static-and-media-files.s3.amazonaws.com",
+                    443,
+                    false
+                )
+            } else {
+                ResultItem("firebaseinstallations.googleapis.com", 443, false)
+            }
+        },
         ResultItem("services.shoonyacloud.com", 443, false),
+        ResultItem("mqtt.shoonyacloud.com", 1883, false),
         ResultItem("turn.shoonyacloud.com", 3478, false),
-        ResultItem("turn.shoonyacloud.com", 5349, false),
+        ResultItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
+        ResultItem("downloads.esper.cloud", 443, false),
+        ResultItem("dpcdownloads.esper.cloud", 443, false),
+        ResultItem("eea-services.esper.cloud", 443, false),
+        ResultItem(
+            "${GeneralUtils.getTenantForNetworkTester(application)}-api.esper.cloud", 443, false
+        ),
         ResultItem("authn2.esper.cloud", 443, false),
         ResultItem("id.esper.cloud", 443, false),
         ResultItem("ping.esper.cloud", 443, false),
-        ResultItem("*.esper.cloud", 443, false),
-        ResultItem("*.esper.io", 443, false),
+        ResultItem("mqtt.esper.cloud", 443, false),
+        ResultItem("statserv.esper.cloud", 443, false),
+        ResultItem("id.esper.cloud", 443, false),
+        ResultItem("onboarding.esper.cloud", 443, false),
+        ResultItem("ota.esper.cloud", 443, false),
+        ResultItem("eea-services.esper.cloud", 443, false),
+        ResultItem("ota.esper.io", 443, false),
         ResultItem("shoonya-firebase.firebaseio.com", 443, false),
-        ResultItem("*.crashlytics.com", 443, false),
         ResultItem("crashlyticsreports-pa.googleapis.com", 443, false),
         ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false),
-        ResultItem("*.firebaseio.com", 443, false),
-        ResultItem("*.googleapis.com", 443, false),
-        ResultItem("*.googleapis.com", 5228, false),
-        ResultItem("*.googleapis.com", 5229, false),
-        ResultItem("*.googleapis.com", 5230, false),
         ResultItem("8.8.8.8", 443, false),
-        ResultItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
-        ResultItem("dpcdownloads.esper.cloud", 443, false),
-        ResultItem("firebaseinstallations.googleapis.com", 443, false),
-        ResultItem("fcm.googleapis.com", 443, false),
-        ResultItem("time.google.com", 123, false),
-        ResultItem("ip-api.com", 80, false),
-        ResultItem("eea-services.esper.cloud", 443, false),
-        ResultItem("ota.esper.io", 443, false)
-    ).flatMap { expandWildcard(it) }
-
-    private fun expandWildcard(item: ResultItem): List<ResultItem> {
-        val expandedItems = mutableListOf<ResultItem>()
-        if (item.url.contains("*")) {
-            val baseUrl = item.url.replace("*", "")
-            val subdomains = when (baseUrl) {
-                ".amazonaws.com" -> listOf("example")
-                ".shoonyacloud.com" -> listOf("services", "mqtt", "turn")
-                ".esper.cloud" -> listOf("downloads", "mqtt-telemetry-prod", "dpcdownloads", "eea-services", "authn2", "id", "ping", "mqtt", "statserv", "onboarding", "eea-sentry")
-                ".esper.io" -> listOf("ota", "downloads")
-                else -> listOf("www")
-            }
-            for (subdomain in subdomains) {
-                expandedItems.add(
-                    ResultItem("https://$subdomain$baseUrl", item.port, item.isAccessible)
-                )
-            }
-        } else {
-            expandedItems.add(item)
-        }
-        return expandedItems
-    }
+        ResultItem("ip-api.com", 80, false)
+    )
 }

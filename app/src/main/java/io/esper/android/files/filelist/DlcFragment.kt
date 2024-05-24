@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
@@ -39,6 +40,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class DlcFragment : Fragment() {
+    private var progressDialog: AlertDialog? = null
     private var allowedContent: String? = null
     private var specificContentList: MutableList<AllContent>? = ArrayList()
     private var sharedPrefManaged: SharedPreferences? = null
@@ -294,51 +296,60 @@ class DlcFragment : Fragment() {
     }
 
     private fun getDataFromDb(db: ContentDb, fetchNewContent: Boolean = true) {
-        val methodDlcFragmentTag = "getDataFromDb"
-        if (db.contentDao().getAllContent().isNotEmpty()) {
-            if (allowedContent.isNullOrEmpty() || allowedContent.equals("[]")) {
-                Log.d(
-                    DlcFragmentTag, "$methodDlcFragmentTag: All Content Allowed: size: ${
-                        db.contentDao().getAllContent().size
-                    }"
-                )
-                binding.toolbar.subtitle = "${db.contentDao().getAllContent().size} files"
-                mContentAdapter?.setContentItems(requireContext(), db.contentDao().getAllContent())
-            } else {
-                Log.d(DlcFragmentTag, "$methodDlcFragmentTag: Specific Content Allowed")
-                val array = db.contentDao().getAllContent()
-                val replace: String? = allowedContent?.replace("[", "")
-                println(replace)
-                val replace1 = replace?.replace("]", "")
-                println(replace1)
-                val myList = listOf(replace1?.split(", ", ","))
-                for (i in array.indices) {
-                    for (j in myList.iterator()) {
-                        if (j?.contains(array[i].name.toString()) == true) {
-                            db.contentDao().getContentWithName(array[i].name.toString()).let {
-                                specificContentList?.add(
-                                    it
-                                )
+        try {
+            val methodDlcFragmentTag = "getDataFromDb"
+            progressDialog?.let { GeneralUtils.dismissMaterialLoadingDialog(it) }
+            if (db.contentDao().getAllContent().isNotEmpty()) {
+                if (allowedContent.isNullOrEmpty() || allowedContent.equals("[]")) {
+                    Log.d(
+                        DlcFragmentTag, "$methodDlcFragmentTag: All Content Allowed: size: ${
+                            db.contentDao().getAllContent().size
+                        }"
+                    )
+                    binding.toolbar.subtitle = "${db.contentDao().getAllContent().size} files"
+                    mContentAdapter?.setContentItems(
+                        requireContext(),
+                        db.contentDao().getAllContent()
+                    )
+                } else {
+                    Log.d(DlcFragmentTag, "$methodDlcFragmentTag: Specific Content Allowed")
+                    val array = db.contentDao().getAllContent()
+                    val replace: String? = allowedContent?.replace("[", "")
+                    println(replace)
+                    val replace1 = replace?.replace("]", "")
+                    println(replace1)
+                    val myList = listOf(replace1?.split(", ", ","))
+                    for (i in array.indices) {
+                        for (j in myList.iterator()) {
+                            if (j?.contains(array[i].name.toString()) == true) {
+                                db.contentDao().getContentWithName(array[i].name.toString()).let {
+                                    specificContentList?.add(
+                                        it
+                                    )
+                                }
                             }
                         }
                     }
+                    binding.toolbar.subtitle = "${specificContentList?.size} files"
+                    mContentAdapter?.setContentItems(requireContext(), specificContentList)
                 }
-                binding.toolbar.subtitle = "${specificContentList?.size} files"
-                mContentAdapter?.setContentItems(requireContext(), specificContentList)
+                setEmptyViewVisibility(View.GONE)
+                setRecyclerViewVisibility(View.VISIBLE)
+                if (fetchNewContent) {
+                    fetchContent(true)
+                }
+            } else {
+                Log.d(DlcFragmentTag, "$methodDlcFragmentTag: No Existing Data Found in DB.")
+                progressDialog = context?.let { GeneralUtils.showMaterialLoadingDialog(it) }
+                binding.toolbar.subtitle = "No files available"
+                setEmptyViewVisibility(View.VISIBLE)
+                setRecyclerViewVisibility(View.GONE)
+                if (fetchNewContent) {
+                    fetchContent(true)
+                }
             }
-            setEmptyViewVisibility(View.GONE)
-            setRecyclerViewVisibility(View.VISIBLE)
-            if (fetchNewContent) {
-                fetchContent(true)
-            }
-        } else {
-            Log.d(DlcFragmentTag, "$methodDlcFragmentTag: No Existing Data Found in DB.")
-            binding.toolbar.subtitle = "No files available"
-            setEmptyViewVisibility(View.VISIBLE)
-            setRecyclerViewVisibility(View.GONE)
-            if (fetchNewContent) {
-                fetchContent(true)
-            }
+        } catch (e: Exception) {
+            Log.e(DlcFragmentTag, "getDataFromDb: Exception: $e")
         }
     }
 

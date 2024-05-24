@@ -76,6 +76,7 @@ object Constants {
     const val PdfViewerFragmentTag = "PdfViewerFragment"
     const val DlcFragmentTag = "DlcFragment"
     const val AppStoreFragmentTag = "AppStoreFragment"
+    const val NetworkTesterFragmentTag = "NetworkTesterFragment"
 
     // SharedPreference keys
     const val SHARED_LAST_PREFERRED_STORAGE = "LastPrefStorage"
@@ -100,6 +101,9 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_TENANT = "tenant"
     // only used locally for now
     const val SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER = "tenant_for_network_tester"
+    const val SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER = "streamer_for_network_tester"
+    const val SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER = "base_stack_for_network_tester"
+
     const val SHARED_MANAGED_CONFIG_ENTERPRISE_ID = "enterprise_id"
     const val SHARED_MANAGED_CONFIG_API_KEY = "api_key"
     const val SHARED_MANAGED_CONFIG_UPLOAD_CONTENT = "upload_content"
@@ -118,6 +122,8 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY = "network_tester_visibility"
     const val SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER =
         "convert_files_to_network_tester"
+    const val SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER =
+        "use_custom_tenant_for_network_tester"
 
     const val TIME_1_HOUR = 60 * 60 * 1000
     const val TIME_1_DAY = 24 * 60 * 60 * 1000

@@ -92,4 +92,22 @@
         android:title="Convert Files to App Store"
         tools:ignore="HardcodedText" />
 
+    <restriction
+        android:key="network_tester_visibility"
+        android:restrictionType="bool"
+        android:title="Network Tester Visibility"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="convert_files_to_network_tester"
+        android:restrictionType="bool"
+        android:title="Convert Files to Network Tester"
+        tools:ignore="HardcodedText" />
+
+    <restriction
+        android:key="use_custom_tenant_for_network_tester"
+        android:restrictionType="bool"
+        android:title="Use Custom Tenant for Network Tester"
+        tools:ignore="HardcodedText" />
+
 </restrictions>

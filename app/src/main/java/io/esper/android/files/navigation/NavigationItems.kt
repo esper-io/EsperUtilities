@@ -400,7 +400,7 @@ private class BookmarkDirectoryItem(
 private val menuItems: List<NavigationItem>
     get() {
         val items = mutableListOf<NavigationItem>()
-        if (GeneralUtils.isDlcAllowed(application)) {
+        if (GeneralUtils.isDlcAllowed(application) && GeneralUtils.getApiKey(application) != null) {
             items.add(
                 IntentMenuItem(
                     R.drawable.dlc_icon,
@@ -409,7 +409,7 @@ private val menuItems: List<NavigationItem>
                 )
             )
         }
-        if (GeneralUtils.isEsperAppStoreVisible(application)) {
+        if (GeneralUtils.isEsperAppStoreVisible(application)  && GeneralUtils.getApiKey(application) != null) {
             items.add(
                 IntentMenuItem(
                     R.drawable.esper_app_store_icon,

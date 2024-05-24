@@ -9,21 +9,36 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.os.Handler
+import android.os.Looper
 import android.os.StrictMode
 import android.text.TextUtils
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.inputmethod.InputMethodManager
+import android.widget.CheckBox
+import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import io.esper.android.files.BuildConfig
+import io.esper.android.files.R
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.filelist.FileListFragment
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.models.EsperDeviceInfo
 import io.esper.devicesdk.models.ProvisionInfo
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.lang.Thread.sleep
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -379,39 +394,43 @@ object GeneralUtils {
     }
 
     fun showNoInternetDialog(context: Context, finishActivity: Boolean = false) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("No Internet Connection")
-            .setMessage("Please check your internet connection and try again.")
-            .setCancelable(false)
+        MaterialAlertDialogBuilder(context).setTitle("No Internet Connection")
+            .setMessage("Please check your internet connection and try again.").setCancelable(false)
             .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()
                 if (finishActivity) {
                     (context as? Activity)?.finish()
                 }
-            }
-            .show()
+            }.show()
     }
 
-    fun showTenantDialog(context: Context, onInputReceived: (String) -> Unit) {
-        // Create a TextInputLayout to hold the TextInputEditText
-        val textInputLayout = TextInputLayout(context).apply {
-            hint = "Enter tenant name"
+    fun showTenantDialog(context: Context, onInputReceived: (String, Boolean) -> Unit) {
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
             setPadding(20, 0, 20, 0)
         }
-
-        // Create a TextInputEditText
+        val textInputLayout = TextInputLayout(context).apply {
+            hint = "Please enter your tenant name"
+        }
         val editText = TextInputEditText(context)
         textInputLayout.addView(editText)
+        val checkBox = CheckBox(context).apply {
+            text = "Is streamer service active?"
+        }
+        layout.addView(textInputLayout)
+        layout.addView(checkBox)
 
-        // Create and show the dialog
-        MaterialAlertDialogBuilder(context).setTitle("Tenant Input").setView(textInputLayout)
+        MaterialAlertDialogBuilder(context).setTitle("Tenant Details").setView(layout)
+            .setCancelable(false)
             .setPositiveButton("OK") { dialog, _ ->
                 val tenantInput = editText.text.toString()
+                val isChecked = checkBox.isChecked
                 // Pass the input to the callback
-                onInputReceived(tenantInput)
+                onInputReceived(tenantInput, isChecked)
                 dialog.dismiss()
             }.setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
+                context.activity?.finish()
             }.show()
     }
 
@@ -438,5 +457,149 @@ object GeneralUtils {
             return subdomain
         }
         return null
+    }
+
+    fun setStreamerAvailability(context: Context, isAvailable: Boolean) {
+        context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit()
+            .putBoolean(Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, isAvailable)
+            .apply()
+    }
+
+    fun isStreamerAvailable(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, false)
+    }
+
+    fun setBaseStackName(requireContext: Context, baseStackName: String?) {
+        requireContext.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit()
+            .putString(Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, baseStackName)
+            .apply()
+    }
+
+    fun getBaseStackName(context: Context): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, null)
+    }
+
+    fun fetchAndStoreBaseStackName(context: Context, tenantInput: String, callback: BaseStackNameCallback) {
+        val url = "https://mission-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
+        val client = OkHttpClient()
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("authorization", BuildConfig.MISSION_CONTROL_API_KEY)
+            .build()
+
+        // Show loading dialog using MaterialAlertDialogBuilder
+        val progressDialog = showMaterialLoadingDialog(context)
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+                Handler(Looper.getMainLooper()).post {
+                    dismissMaterialLoadingDialog(progressDialog)
+                    callback.onError(e)
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    Handler(Looper.getMainLooper()).post {
+                        dismissMaterialLoadingDialog(progressDialog)
+                    }
+
+                    if (!response.isSuccessful) {
+                        Handler(Looper.getMainLooper()).post {
+                            callback.onError(IOException("Unexpected code $response"))
+                        }
+                        return
+                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody != null) {
+                        val jsonObject = JSONObject(responseBody)
+                        val dataArray = jsonObject.getJSONArray("data")
+                        if (dataArray.length() > 0) {
+                            val firstObject = dataArray.getJSONObject(0)
+                            val baseStackObject = firstObject.getJSONObject("baseStack")
+                            val baseStackName = baseStackObject.getString("name")
+
+                            // Store the base stack name in shared preferences
+                            setBaseStackName(context, baseStackName.toLowerCase())
+
+                            // Notify the fragment with the fetched base stack name
+                            Handler(Looper.getMainLooper()).post {
+                                callback.onBaseStackNameFetched(baseStackName)
+                            }
+                        } else {
+                            Handler(Looper.getMainLooper()).post {
+                                callback.onError(IOException("No data found"))
+                            }
+                        }
+                    } else {
+                        Handler(Looper.getMainLooper()).post {
+                            callback.onError(IOException("Empty response body"))
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    fun showStackDialog(context: Context, onInputReceived: (String?) -> Unit) {
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 0, 20, 0)
+        }
+        val textInputLayout = TextInputLayout(context).apply {
+            hint = "Please enter your stack name (if you know), else press Cancel to skip."
+        }
+        val editText = TextInputEditText(context)
+        textInputLayout.addView(editText)
+        layout.addView(textInputLayout)
+
+        MaterialAlertDialogBuilder(context).setTitle("Stack Details").setView(layout)
+            .setCancelable(false)
+            .setPositiveButton("OK") { dialog, _ ->
+                val tenantInput = editText.text.toString()
+                // Pass the input to the callback
+                if (tenantInput.isNotEmpty()) {
+                    onInputReceived(tenantInput)
+                } else {
+                    onInputReceived(null)
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                onInputReceived(null)
+            }.show()
+    }
+
+    fun showMaterialLoadingDialog(context: Context): AlertDialog {
+        val progressDialogView = LayoutInflater.from(context).inflate(R.layout.dialog_loading, null)
+        return MaterialAlertDialogBuilder(context)
+            .setView(progressDialogView)
+            .setCancelable(false)
+            .show()
+    }
+
+    fun dismissMaterialLoadingDialog(dialog: AlertDialog) {
+        dialog.dismiss()
+    }
+
+    fun useCustomTenantForNetworkTester(context: Context): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false)
+    }
+
+    interface BaseStackNameCallback {
+        fun onBaseStackNameFetched(baseStackName: String)
+        fun onError(e: Exception)
     }
 }
