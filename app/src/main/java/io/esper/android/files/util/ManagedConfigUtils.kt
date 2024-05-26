@@ -73,6 +73,28 @@ object ManagedConfigUtils {
 //        "use_custom_tenant_for_network_tester": true
 //    }
 
+// Sample Json
+//    {
+//        "app_name": "Files",
+//        "show_screenshots_folder": false,
+//        "deletion_allowed": false,
+//        "on_demand_download": false,
+//        "api_key": "",
+//        "upload_content": false,
+//        "internal_root_path": "/storage/emulated/0/esperfiles",
+//        "external_root_path": "/storage/SD-CARD/esperfiles/",
+//        "sharing_allowed": false,
+//        "creation_allowed": false,
+//        "add_storage": false,
+//        "ftp_allowed": false,
+//        "show_device_details": false,
+//        "esper_app_store_visibility": false,
+//        "convert_files_to_app_store": false,
+//        "network_tester_visibility": false,
+//        "convert_files_to_network_tester": false,
+//        "use_custom_tenant_for_network_tester": false
+//    }
+
     private fun startManagedConfigValuesReceiver(
         context: Context, sharedPrefManaged: SharedPreferences
     ) {
