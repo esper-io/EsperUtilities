@@ -3,8 +3,6 @@ package io.esper.android.files.settings
 import android.content.Context
 import android.os.Environment
 import android.text.TextUtils
-import java8.nio.file.Path
-import java8.nio.file.Paths
 import io.esper.android.files.R
 import io.esper.android.files.app.application
 import io.esper.android.files.compat.EnvironmentCompat2
@@ -20,6 +18,8 @@ import io.esper.android.files.theme.custom.ThemeColor
 import io.esper.android.files.theme.night.NightMode
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.GeneralUtils
+import java8.nio.file.Path
+import java8.nio.file.Paths
 import java.io.File
 
 object Settings {
@@ -29,12 +29,7 @@ object Settings {
             PrimaryStorageVolume(
                 "Internal Storage",
                 true,
-                GeneralUtils.getInternalStoragePath(
-                    application.applicationContext.getSharedPreferences(
-                        Constants.SHARED_MANAGED_CONFIG_VALUES,
-                        Context.MODE_PRIVATE
-                    )
-                )
+                GeneralUtils.getInternalStoragePath(application)
             )
         )
     )
@@ -44,13 +39,9 @@ object Settings {
     )
 
     fun initializeFileListDefaultDirectory(context: Context): SettingLiveData<Path> {
-        val sharedPrefManaged = context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES,
-            Context.MODE_PRIVATE
-        )
         return ParcelValueSettingLiveData(
             R.string.pref_key_file_list_default_directory,
-            Paths.get(GeneralUtils.getInternalStoragePath(sharedPrefManaged))!!
+            Paths.get(GeneralUtils.getInternalStoragePath(context))
         )
     }
 
