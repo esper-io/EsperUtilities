@@ -46,8 +46,6 @@ class FileListActivity : AppActivity() {
             checkAndConvertApp(savedInstanceState)
         } catch (e: Exception) {
             Log.e("FileListActivity", "Error in checkAndConvertApp", e)
-        } finally {
-            initFragment(savedInstanceState)
         }
     }
 

@@ -139,7 +139,7 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
             if (GeneralUtils.isStreamerAvailable(requireContext())) {
                 ResultItem("streamer.esper.io", 443, false)
             } else {
-                ResultItem("streamer.esper.io", 443, true)
+                ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false)
             },
             if (!GeneralUtils.getBaseStackName(requireContext()).isNullOrEmpty()) {
                 ResultItem(
@@ -174,7 +174,6 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
             ResultItem("ota.esper.io", 443, false),
             ResultItem("shoonya-firebase.firebaseio.com", 443, false),
             ResultItem("crashlyticsreports-pa.googleapis.com", 443, false),
-            ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false),
             ResultItem("8.8.8.8", 443, false),
             ResultItem("ip-api.com", 80, false)
         )
