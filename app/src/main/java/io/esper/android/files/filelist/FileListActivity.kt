@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContract
@@ -39,6 +40,28 @@ class FileListActivity : AppActivity() {
         initSharedPrefs()
         sharedPrefManaged?.let { GeneralUtils.initSDK(it, this) }
 
+        ManagedConfigUtils.getManagedConfigValues(this)
+
+        try {
+            checkAndConvertApp(savedInstanceState)
+        } catch (e: Exception) {
+            Log.e("FileListActivity", "Error in checkAndConvertApp", e)
+        } finally {
+            initFragment(savedInstanceState)
+        }
+    }
+
+    private fun initFragment(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) {
+            fragment = FileListFragment().putArgs(FileListFragment.Args(intent))
+            supportFragmentManager.commit { add(android.R.id.content, fragment) }
+        } else {
+            fragment =
+                supportFragmentManager.findFragmentById(android.R.id.content) as FileListFragment
+        }
+    }
+
+    private fun checkAndConvertApp(savedInstanceState: Bundle?) {
         // Check if the files app need to be converted to app store
         if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false)) {
             startActivity(AppStoreActivity::class.createIntent())
@@ -53,14 +76,7 @@ class FileListActivity : AppActivity() {
             return
         }
 
-        ManagedConfigUtils.getManagedConfigValues(this)
-        if (savedInstanceState == null) {
-            fragment = FileListFragment().putArgs(FileListFragment.Args(intent))
-            supportFragmentManager.commit { add(android.R.id.content, fragment) }
-        } else {
-            fragment =
-                supportFragmentManager.findFragmentById(android.R.id.content) as FileListFragment
-        }
+        initFragment(savedInstanceState)
     }
 
     private fun initSharedPrefs() {
