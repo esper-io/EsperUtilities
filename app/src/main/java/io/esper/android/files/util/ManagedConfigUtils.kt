@@ -67,9 +67,9 @@ object ManagedConfigUtils {
 //        "ftp_allowed": true,
 //        "show_device_details": true,
 //        "esper_app_store_visibility": true,
-//        "convert_files_to_app_store": true,
+//        "convert_files_to_app_store": false,
 //        "network_tester_visibility": true,
-//        "convert_files_to_network_tester": true,
+//        "convert_files_to_network_tester": false,
 //        "use_custom_tenant_for_network_tester": true
 //    }
 

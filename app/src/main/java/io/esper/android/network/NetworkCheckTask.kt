@@ -1,7 +1,5 @@
 package io.esper.android.network
 
-import io.esper.android.files.app.application
-import io.esper.android.files.util.GeneralUtils
 import io.esper.android.network.model.ResultItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,13 +13,16 @@ import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.URL
+import java.util.concurrent.atomic.AtomicInteger
 
 class NetworkCheckTask(
-    private val adapter: NetworkResultAdapter, private val items: MutableList<ResultItem>
+    private val adapter: NetworkResultAdapter,
+    private val items: MutableList<ResultItem>,
+    private val itemsToCheck: List<ResultItem>
 ) {
     var job: Job? = null
-    var successCount = 0
-    var failureCount = 0
+    private val successCount = AtomicInteger(0)
+    private val failureCount = AtomicInteger(0)
 
     fun start() {
         job = CoroutineScope(Dispatchers.IO).launch {
@@ -42,16 +43,14 @@ class NetworkCheckTask(
                             false
                         }
                     }
-                    if (isAccessible) {
-                        successCount++
-                    } else {
-                        failureCount++
-                    }
-                    ResultItem(item.url, item.port, isAccessible).also {
-                        withContext(Dispatchers.Main) {
-                            items.add(it)
-                            adapter.notifyItemInserted(items.size - 1)
+                    withContext(Dispatchers.Main) {
+                        if (isAccessible) {
+                            successCount.incrementAndGet()
+                        } else {
+                            failureCount.incrementAndGet()
                         }
+                        items.add(ResultItem(item.url, item.port, isAccessible))
+                        adapter.notifyItemInserted(items.size - 1)
                     }
                 }
             }.awaitAll()
@@ -86,44 +85,10 @@ class NetworkCheckTask(
         }
     }
 
-    private val itemsToCheck = listOf(
-        if (GeneralUtils.isStreamerAvailable(application)) {
-            ResultItem("streamer.esper.io", 443, false)
-        } else {
-            if (!GeneralUtils.getBaseStackName(application).isNullOrEmpty()) {
-                ResultItem(
-                    "scapi-${GeneralUtils.getBaseStackName(application)}-static-and-media-files.s3.amazonaws.com",
-                    443,
-                    false
-                )
-            } else {
-                ResultItem("firebaseinstallations.googleapis.com", 443, false)
-            }
-        },
-        ResultItem("services.shoonyacloud.com", 443, false),
-        ResultItem("mqtt.shoonyacloud.com", 1883, false),
-        ResultItem("turn.shoonyacloud.com", 3478, false),
-        ResultItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
-        ResultItem("downloads.esper.cloud", 443, false),
-        ResultItem("dpcdownloads.esper.cloud", 443, false),
-        ResultItem("eea-services.esper.cloud", 443, false),
-        ResultItem(
-            "${GeneralUtils.getTenantForNetworkTester(application)}-api.esper.cloud", 443, false
-        ),
-        ResultItem("authn2.esper.cloud", 443, false),
-        ResultItem("id.esper.cloud", 443, false),
-        ResultItem("ping.esper.cloud", 443, false),
-        ResultItem("mqtt.esper.cloud", 443, false),
-        ResultItem("statserv.esper.cloud", 443, false),
-        ResultItem("id.esper.cloud", 443, false),
-        ResultItem("onboarding.esper.cloud", 443, false),
-        ResultItem("ota.esper.cloud", 443, false),
-        ResultItem("eea-services.esper.cloud", 443, false),
-        ResultItem("ota.esper.io", 443, false),
-        ResultItem("shoonya-firebase.firebaseio.com", 443, false),
-        ResultItem("crashlyticsreports-pa.googleapis.com", 443, false),
-        ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false),
-        ResultItem("8.8.8.8", 443, false),
-        ResultItem("ip-api.com", 80, false)
-    )
+    val successCountValue: Int
+        get() = successCount.get()
+
+    val failureCountValue: Int
+        get() = failureCount.get()
 }
+

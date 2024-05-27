@@ -45,8 +45,7 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
         if (!sharedPrefManaged!!.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
-                false
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false
             )
         ) {
             activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
@@ -93,8 +92,9 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
                 GeneralUtils.setStreamerAvailability(requireContext(), false)
                 progressBar.visibility = View.VISIBLE
                 tenantInput?.let {
-                    GeneralUtils.fetchAndStoreBaseStackName(requireContext(),
-                        it, this)
+                    GeneralUtils.fetchAndStoreBaseStackName(
+                        requireContext(), it, this
+                    )
                 }
             }
         } else {
@@ -135,8 +135,52 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
         menuBinding.refreshItem.isEnabled = false
         binding.toolbar.subtitle = null
 
+        val itemsToCheck = listOf(
+            if (GeneralUtils.isStreamerAvailable(requireContext())) {
+                ResultItem("streamer.esper.io", 443, false)
+            } else {
+                ResultItem("streamer.esper.io", 443, true)
+            },
+            if (!GeneralUtils.getBaseStackName(requireContext()).isNullOrEmpty()) {
+                ResultItem(
+                    "scapi-${GeneralUtils.getBaseStackName(requireContext())}-static-and-media-files.s3.amazonaws.com",
+                    443,
+                    false
+                )
+            } else {
+                ResultItem("firebaseinstallations.googleapis.com", 443, false)
+            },
+            ResultItem("services.shoonyacloud.com", 443, false),
+            ResultItem("mqtt.shoonyacloud.com", 1883, false),
+            ResultItem("turn.shoonyacloud.com", 3478, false),
+            ResultItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
+            ResultItem("downloads.esper.cloud", 443, false),
+            ResultItem("dpcdownloads.esper.cloud", 443, false),
+            ResultItem("eea-services.esper.cloud", 443, false),
+            ResultItem(
+                "${GeneralUtils.getTenantForNetworkTester(requireContext())}-api.esper.cloud",
+                443,
+                false
+            ),
+            ResultItem("authn2.esper.cloud", 443, false),
+            ResultItem("id.esper.cloud", 443, false),
+            ResultItem("ping.esper.cloud", 443, false),
+            ResultItem("mqtt.esper.cloud", 443, false),
+            ResultItem("statserv.esper.cloud", 443, false),
+            ResultItem("id.esper.cloud", 443, false),
+            ResultItem("onboarding.esper.cloud", 443, false),
+            ResultItem("ota.esper.cloud", 443, false),
+            ResultItem("eea-services.esper.cloud", 443, false),
+            ResultItem("ota.esper.io", 443, false),
+            ResultItem("shoonya-firebase.firebaseio.com", 443, false),
+            ResultItem("crashlyticsreports-pa.googleapis.com", 443, false),
+            ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false),
+            ResultItem("8.8.8.8", 443, false),
+            ResultItem("ip-api.com", 80, false)
+        )
+
         networkCheckTask?.cancel()
-        networkCheckTask = NetworkCheckTask(networkResultAdapter, resultItems)
+        networkCheckTask = NetworkCheckTask(networkResultAdapter, resultItems, itemsToCheck)
         networkCheckTask?.start()
 
         // Hide progress bar when all tasks are done
@@ -151,14 +195,15 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
                 networkResultAdapter.scrollToLastPosition(binding.recyclerViewResults)
 
                 // Display success and failure counts
-                val successCount = task.successCount
-                val failureCount = task.failureCount
+                val successCount = task.successCountValue
+                val failureCount = task.failureCountValue
                 binding.toolbar.subtitle = getString(
                     R.string.network_tester_subtitle, successCount, failureCount
                 )
             }
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
