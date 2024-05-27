@@ -62,17 +62,21 @@ class NetworkCheckTask(
     }
 
     private fun checkUrl(urlString: String, port: Int): Boolean {
+        var urlConnection: HttpURLConnection? = null
         return try {
             val url = URL(urlString)
-            val urlConnection = url.openConnection() as HttpURLConnection
+            urlConnection = url.openConnection() as HttpURLConnection
             urlConnection.requestMethod = "HEAD"
             urlConnection.connectTimeout = 5000
             urlConnection.connect()
             urlConnection.responseCode == HttpURLConnection.HTTP_OK
         } catch (e: IOException) {
             false
+        } finally {
+            urlConnection?.disconnect()
         }
     }
+
 
     private fun checkPort(host: String, port: Int): Boolean {
         return try {
