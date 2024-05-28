@@ -22,8 +22,6 @@ android {
     defaultConfig {
         applicationId 'io.esper.android.files'
         minSdk 21
-        // Not supporting notification runtime permission yet.
-        //noinspection OldTargetApi
         targetSdk 34
         versionCode 1
         versionName '1.0.0'
