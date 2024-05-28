@@ -9,7 +9,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import com.topjohnwu.superuser.internal.UiThreadHandler
-import io.esper.android.files.R
+import io.esper.android.files.app.application
 import io.esper.android.files.file.FileItem
 import io.esper.android.files.file.fileProviderUri
 import io.esper.android.files.filejob.FileJobService
@@ -113,7 +113,7 @@ object FileUtils {
     }
 
     fun createEsperFolder() {
-        FileJobService.createDirectory(Constants.InternalRootFolder)
+        GeneralUtils.getInternalStoragePath(application)?.let { GeneralUtils.createDirectory(it) }
     }
 
     fun deleteFile(filePath: String): Boolean {

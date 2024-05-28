@@ -398,6 +398,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!viewModel.isStorageAccessRequested) {
             ensureNotificationPermission()
         }
+
+        FileUtils.createEsperFolder()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

@@ -36,11 +36,12 @@ class FileListActivity : AppActivity() {
         // TODO check if its needed
 //        GeneralUtils.initNetworkConfigs()
 
-        FileUtils.createEsperFolder()
         initSharedPrefs()
         sharedPrefManaged?.let { GeneralUtils.initSDK(it, this) }
 
         ManagedConfigUtils.getManagedConfigValues(this)
+
+        FileUtils.createEsperFolder()
 
         try {
             checkAndConvertApp(savedInstanceState)

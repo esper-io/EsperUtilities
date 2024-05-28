@@ -4,7 +4,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import androidx.annotation.MainThread
 import io.esper.android.files.file.MimeType
 import io.esper.android.files.provider.common.PosixFileModeBit
@@ -14,7 +13,6 @@ import io.esper.android.files.util.ForegroundNotificationManager
 import io.esper.android.files.util.WakeWifiLock
 import io.esper.android.files.util.removeFirst
 import java8.nio.file.Path
-import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
@@ -195,15 +193,6 @@ class FileJobService : Service() {
         fun cancelJob(id: Int) {
             pendingJobs.removeFirst { it.id == id }
             instance?.cancelJob(id)
-        }
-
-        fun createDirectory(path: String) {
-            try {
-                val fileDirectory = File(path)
-                if (!fileDirectory.exists()) fileDirectory.mkdir()
-            } catch (e: Exception) {
-                Log.e("FileJobService", "Error creating directory: $path", e)
-            }
         }
     }
 }

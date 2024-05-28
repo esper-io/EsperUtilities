@@ -598,6 +598,17 @@ object GeneralUtils {
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false)
     }
 
+    fun createDirectory(path: String) {
+        try {
+            val fileDirectory = File(path)
+            if (!fileDirectory.exists()) {
+                fileDirectory.mkdir()
+            }
+        } catch (e: Exception) {
+            Log.e("FileJobService", "Error creating directory: $path", e)
+        }
+    }
+
     interface BaseStackNameCallback {
         fun onBaseStackNameFetched(baseStackName: String)
         fun onError(e: Exception)
