@@ -28,6 +28,7 @@ import io.esper.android.files.BuildConfig
 import io.esper.android.files.R
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.filelist.FileListFragment
+import io.esper.android.files.util.Constants.GeneralUtilsTag
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.models.EsperDeviceInfo
 import io.esper.devicesdk.models.ProvisionInfo
@@ -52,7 +53,7 @@ object GeneralUtils {
     }
 
     fun deleteDir(mCurrentPath: String) {
-        Log.i(Constants.GeneralUtilsTag, "deleteDir: Deleting directory")
+        Log.i(GeneralUtilsTag, "deleteDir: Deleting directory")
         val fileDirectory = File(mCurrentPath)
         if (fileDirectory.exists()) fileDirectory.deleteRecursively()
     }
@@ -109,7 +110,7 @@ object GeneralUtils {
         )
         val existingDeviceName = getDeviceName(context)
         if (token != null && TextUtils.isEmpty(existingDeviceName)) {
-            Log.i(Constants.GeneralUtilsTag, "initSDK: Initializing SDK")
+            Log.i(GeneralUtilsTag, "initSDK: Initializing SDK")
             val sdk = getEsperSDK(context)
             sdk.activateSDK(token, object : EsperDeviceSDK.Callback<Void?> {
                 override fun onResponse(response: Void?) {
@@ -119,7 +120,7 @@ object GeneralUtils {
 
                 override fun onFailure(t: Throwable) {
                     Log.d(
-                        Constants.GeneralUtilsTag,
+                        GeneralUtilsTag,
                         "activateSDK: Callback.onFailure: message : " + t.message
                     )
                 }
@@ -185,7 +186,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    Constants.GeneralUtilsTag,
+                    GeneralUtilsTag,
                     "getProvisionInfo: Callback.onFailure: message : " + t.message
                 )
             }
@@ -197,7 +198,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    Constants.GeneralUtilsTag,
+                    GeneralUtilsTag,
                     "getEsperDeviceInfo: Callback.onFailure: message : " + t.message
                 )
             }
@@ -297,7 +298,7 @@ object GeneralUtils {
     }
 
     fun triggerRebirth(context: Context) {
-        Log.i(Constants.GeneralUtilsTag, "triggerRebirth: Restarting app")
+        Log.i(GeneralUtilsTag, "triggerRebirth: Restarting app")
         sleep(1000)
         val packageManager = context.packageManager
         val intent = packageManager.getLaunchIntentForPackage(context.packageName)
@@ -348,7 +349,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    Constants.GeneralUtilsTag,
+                    GeneralUtilsTag,
                     "activateSDK: Callback.onFailure: message : " + t.message
                 )
                 // Call the callback with a default value or handle failure case as needed
@@ -421,8 +422,7 @@ object GeneralUtils {
         layout.addView(checkBox)
 
         MaterialAlertDialogBuilder(context).setTitle("Tenant Details").setView(layout)
-            .setCancelable(false)
-            .setPositiveButton("OK") { dialog, _ ->
+            .setCancelable(false).setPositiveButton("OK") { dialog, _ ->
                 val tenantInput = editText.text.toString()
                 val isChecked = checkBox.isChecked
                 // Pass the input to the callback
@@ -487,13 +487,16 @@ object GeneralUtils {
         ).getString(Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, null)
     }
 
-    fun fetchAndStoreBaseStackName(context: Context, tenantInput: String, callback: BaseStackNameCallback) {
-        val url = "https://mission-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
+    fun fetchAndStoreBaseStackName(
+        context: Context,
+        tenantInput: String,
+        callback: BaseStackNameCallback
+    ) {
+        val url =
+            "https://mission1-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
         val client = OkHttpClient()
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("authorization", BuildConfig.MISSION_CONTROL_API_KEY)
-            .build()
+        val request = Request.Builder().url(url)
+            .addHeader("authorization", BuildConfig.MISSION_CONTROL_API_KEY).build()
 
         // Show loading dialog using MaterialAlertDialogBuilder
         val progressDialog = showMaterialLoadingDialog(context)
@@ -557,15 +560,15 @@ object GeneralUtils {
             setPadding(20, 0, 20, 0)
         }
         val textInputLayout = TextInputLayout(context).apply {
-            hint = "Please enter your stack name (if you know), else press Cancel to skip."
+            hint = "Please enter your stack name"
         }
         val editText = TextInputEditText(context)
         textInputLayout.addView(editText)
         layout.addView(textInputLayout)
 
-        MaterialAlertDialogBuilder(context).setTitle("Stack Details").setView(layout)
-            .setCancelable(false)
-            .setPositiveButton("OK") { dialog, _ ->
+        MaterialAlertDialogBuilder(context).setTitle("Stack Details")
+            .setMessage("Please enter your tenant's stack name (if you know), else press Cancel to skip.")
+            .setView(layout).setCancelable(false).setPositiveButton("OK") { dialog, _ ->
                 val tenantInput = editText.text.toString()
                 // Pass the input to the callback
                 if (tenantInput.isNotEmpty()) {
@@ -582,9 +585,7 @@ object GeneralUtils {
 
     fun showMaterialLoadingDialog(context: Context): AlertDialog {
         val progressDialogView = LayoutInflater.from(context).inflate(R.layout.dialog_loading, null)
-        return MaterialAlertDialogBuilder(context)
-            .setView(progressDialogView)
-            .setCancelable(false)
+        return MaterialAlertDialogBuilder(context).setView(progressDialogView).setCancelable(false)
             .show()
     }
 
@@ -605,7 +606,7 @@ object GeneralUtils {
                 fileDirectory.mkdir()
             }
         } catch (e: Exception) {
-            Log.e("FileJobService", "Error creating directory: $path", e)
+            Log.e(GeneralUtilsTag, "Error creating directory: $path", e)
         }
     }
 
