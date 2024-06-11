@@ -77,6 +77,7 @@ object Constants {
     const val DlcFragmentTag = "DlcFragment"
     const val AppStoreFragmentTag = "AppStoreFragment"
     const val NetworkTesterFragmentTag = "NetworkTesterFragment"
+    const val IminDualScreenFragmentTag = "IminDualScreenFragment"
 
     // SharedPreference keys
     const val SHARED_LAST_PREFERRED_STORAGE = "LastPrefStorage"
@@ -124,6 +125,12 @@ object Constants {
         "convert_files_to_network_tester"
     const val SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER =
         "use_custom_tenant_for_network_tester"
+
+    //iMin Specific
+    const val SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP = "convert_to_imin_app"
+    const val SHARED_MANAGED_CONFIG_IMIN_APP_PATH = "imin_app_path"
+    const val SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS = "imin_app_videos"
+
 
     const val TIME_1_HOUR = 60 * 60 * 1000
     const val TIME_1_DAY = 24 * 60 * 60 * 1000

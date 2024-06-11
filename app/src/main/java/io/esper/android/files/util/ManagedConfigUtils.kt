@@ -158,12 +158,21 @@ object ManagedConfigUtils {
         val useCustomTenantForNetworkTester = useCustomTenantForNetworkTesterManagedConfig(
             context, appRestrictions, sharedPrefManaged
         )
+        val convertFilesToIminApp = convertFilesToIminAppManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
+        val iMinAppPath = iMinAppPathManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
+        val isIminAppUsingVideos = iMinAppVideoManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
 
         if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester || convertFilesToIminApp || iMinAppPath || isIminAppUsingVideos) {
             if (!apiKeyChange) {
                 Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
@@ -581,6 +590,74 @@ object ManagedConfigUtils {
             ).apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Custom Tenant For Network Tester Changed")
+        }
+        return result
+    }
+
+    private fun convertFilesToIminAppManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val convertFilesToIminApp =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP
+            ) else false
+        val changeInValue = convertFilesToIminApp != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP, convertFilesToIminApp
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To Imin App Changed")
+        }
+        return result
+    }
+
+    private fun iMinAppPathManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val iMinAppPath =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH)) appRestrictions.getString(
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH
+            ) else null
+
+        val changeInValue = iMinAppPath != sharedPrefManaged.getString(
+            Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, null
+        )
+        if (changeInValue && iMinAppPath.isNullOrEmpty()) {
+            sharedPrefManaged.edit().remove(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "iMin App Path Removed")
+        } else if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putString(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, iMinAppPath).apply()
+            result = true
+            GeneralUtils.initSDK(sharedPrefManaged, context)
+            Log.i(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, "iMin App Path Changed")
+        }
+        return result
+    }
+
+    private fun iMinAppVideoManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val iMinVideo =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS
+            ) else true
+        val changeInValue = iMinVideo != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS, true
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS, iMinVideo
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "iMin App Videos Changed")
         }
         return result
     }

@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
@@ -26,9 +28,13 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.esper.android.files.BuildConfig
 import io.esper.android.files.R
+import io.esper.android.files.app.application
+import io.esper.android.files.filelist.AppStoreActivity
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.filelist.FileListFragment
 import io.esper.android.files.util.Constants.GeneralUtilsTag
+import io.esper.android.imin.IminDualScreenActivity
+import io.esper.android.network.NetworkTesterActivity
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.models.EsperDeviceInfo
 import io.esper.devicesdk.models.ProvisionInfo
@@ -47,6 +53,33 @@ import java.util.Date
 
 
 object GeneralUtils {
+
+    fun checkAndConvertApp(activity: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            Log.i(GeneralUtilsTag, "checkAndConvertApp: All Files Access Permission not granted")
+            return
+        }
+
+        val sharedPrefManaged = activity.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        )
+
+        val conversionMap = mapOf(
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE to AppStoreActivity::class,
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER to NetworkTesterActivity::class,
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP to IminDualScreenActivity::class
+        )
+
+        for ((key, activityClass) in conversionMap) {
+            if (sharedPrefManaged.getBoolean(key, false)) {
+                val intent = Intent(activity, activityClass.java)
+                activity.startActivity(intent)
+                activity.finish()
+                return
+            }
+        }
+    }
+
     fun createDir(mCurrentPath: String) {
         val fileDirectory = File(mCurrentPath)
         if (!fileDirectory.exists()) fileDirectory.mkdir()
@@ -120,8 +153,7 @@ object GeneralUtils {
 
                 override fun onFailure(t: Throwable) {
                     Log.d(
-                        GeneralUtilsTag,
-                        "activateSDK: Callback.onFailure: message : " + t.message
+                        GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
                     )
                 }
             })
@@ -186,8 +218,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    GeneralUtilsTag,
-                    "getProvisionInfo: Callback.onFailure: message : " + t.message
+                    GeneralUtilsTag, "getProvisionInfo: Callback.onFailure: message : " + t.message
                 )
             }
         })
@@ -349,8 +380,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    GeneralUtilsTag,
-                    "activateSDK: Callback.onFailure: message : " + t.message
+                    GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
                 )
                 // Call the callback with a default value or handle failure case as needed
                 callback(false)
@@ -488,9 +518,7 @@ object GeneralUtils {
     }
 
     fun fetchAndStoreBaseStackName(
-        context: Context,
-        tenantInput: String,
-        callback: BaseStackNameCallback
+        context: Context, tenantInput: String, callback: BaseStackNameCallback
     ) {
         val url =
             "https://mission1-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
@@ -608,6 +636,13 @@ object GeneralUtils {
         } catch (e: Exception) {
             Log.e(GeneralUtilsTag, "Error creating directory: $path", e)
         }
+    }
+
+    @JvmStatic
+    fun isIminUsingVideos(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS, true)
     }
 
     interface BaseStackNameCallback {

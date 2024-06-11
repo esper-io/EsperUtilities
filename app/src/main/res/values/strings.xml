@@ -829,4 +829,5 @@
     <string name="network_tester_subtitle">Successful pings: %d, Failed pings: %d</string>
     <string name="tenant_not_available">Tenant not available, please check and try again.</string>
     <string name="stack_details_not_available">Stack details not available.</string>
+    <string name="imin_dual_screen_title">Imin Dual Screen Activity</string>
 </resources>

@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.util.Log
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -387,6 +388,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_NAME_ELLIPSIZE.observe(viewLifecycleOwner) { onFileNameEllipsizeChanged(it) }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         context?.let { FileUtils.startScreenShotMove(it) }
+
+        try {
+            GeneralUtils.checkAndConvertApp(requireActivity())
+        } catch (e: Exception) {
+            Log.e("FileListActivity", "Error in checkAndConvertApp", e)
+        }
     }
 
     override fun onResume() {
@@ -750,6 +757,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
         context?.let { FileUtils.startScreenShotMove(it) }
         viewModel.reload()
+        try {
+            GeneralUtils.checkAndConvertApp(requireActivity())
+        } catch (e: Exception) {
+            Log.e("FileListActivity", "Error in checkAndConvertApp", e)
+        }
     }
 
     private fun setShowHiddenFiles(showHiddenFiles: Boolean) {

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContract
@@ -18,7 +17,6 @@ import io.esper.android.files.util.ManagedConfigUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.extraPath
 import io.esper.android.files.util.putArgs
-import io.esper.android.network.NetworkTesterActivity
 import java8.nio.file.Path
 
 class FileListActivity : AppActivity() {
@@ -38,16 +36,9 @@ class FileListActivity : AppActivity() {
 
         initSharedPrefs()
         sharedPrefManaged?.let { GeneralUtils.initSDK(it, this) }
-
         ManagedConfigUtils.getManagedConfigValues(this)
-
         FileUtils.createEsperFolder()
-
-        try {
-            checkAndConvertApp(savedInstanceState)
-        } catch (e: Exception) {
-            Log.e("FileListActivity", "Error in checkAndConvertApp", e)
-        }
+        initFragment(savedInstanceState)
     }
 
     private fun initFragment(savedInstanceState: Bundle?) {
@@ -58,24 +49,6 @@ class FileListActivity : AppActivity() {
             fragment =
                 supportFragmentManager.findFragmentById(android.R.id.content) as FileListFragment
         }
-    }
-
-    private fun checkAndConvertApp(savedInstanceState: Bundle?) {
-        // Check if the files app need to be converted to app store
-        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false)) {
-            startActivity(AppStoreActivity::class.createIntent())
-            finish()
-            return
-        }
-
-        // Check if the files app need to be converted to network tester
-        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false)) {
-            startActivity(NetworkTesterActivity::class.createIntent())
-            finish()
-            return
-        }
-
-        initFragment(savedInstanceState)
     }
 
     private fun initSharedPrefs() {
