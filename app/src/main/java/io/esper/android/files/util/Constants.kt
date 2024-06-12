@@ -130,6 +130,7 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP = "convert_to_imin_app"
     const val SHARED_MANAGED_CONFIG_IMIN_APP_PATH = "imin_app_path"
     const val SHARED_MANAGED_CONFIG_IMIN_APP_VIDEOS = "imin_app_videos"
+    const val SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL = "imin_app_photos_slideshow_interval"
 
 
     const val TIME_1_HOUR = 60 * 60 * 1000

@@ -167,14 +167,18 @@ object ManagedConfigUtils {
         val isIminAppUsingVideos = iMinAppVideoManagedConfig(
             context, appRestrictions, sharedPrefManaged
         )
+        val iMinPhotoSlideShowInterval = iMinPhotoSlideShowIntervalManagedConfig(
+            context, appRestrictions, sharedPrefManaged
+        )
+
 
         if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester || convertFilesToIminApp || iMinAppPath || isIminAppUsingVideos) {
+        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester || convertFilesToIminApp || iMinAppPath || isIminAppUsingVideos || iMinPhotoSlideShowInterval) {
             if (!apiKeyChange) {
-                Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
+                Log.i(Constants.ManagedConfigUtilsTag, " Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
             } else {
                 Log.i(
@@ -658,6 +662,27 @@ object ManagedConfigUtils {
             ).apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "iMin App Videos Changed")
+        }
+        return result
+    }
+
+    private fun iMinPhotoSlideShowIntervalManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val iMinPhotoSlideShowInterval =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL)) appRestrictions.getInt(
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL
+            ) else 10000
+        val changeInValue = iMinPhotoSlideShowInterval != sharedPrefManaged.getInt(
+            Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL, 10000
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putInt(
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL, iMinPhotoSlideShowInterval
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "iMin App Photos Slide Show Interval Changed")
         }
         return result
     }

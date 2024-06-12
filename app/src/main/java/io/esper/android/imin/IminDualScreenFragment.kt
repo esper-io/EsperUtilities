@@ -120,6 +120,9 @@ class IminDualScreenFragment : Fragment() {
     }
 
     private fun startSlideshow() {
+        val iMinPhotoSlideShowInterval = requireContext().getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getInt(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL, 10000)
         val slideshowRunnable = object : Runnable {
             override fun run() {
                 if (photoFiles.isNotEmpty()) {
@@ -127,7 +130,7 @@ class IminDualScreenFragment : Fragment() {
                         Uri.fromFile(photoFiles[currentPhotoIndex])
                     )
                     currentPhotoIndex = (currentPhotoIndex + 1) % photoFiles.size
-                    slideshowHandler.postDelayed(this, SLIDESHOW_INTERVAL)
+                    slideshowHandler.postDelayed(this, iMinPhotoSlideShowInterval.toLong())
                 }
             }
         }
@@ -212,6 +215,5 @@ class IminDualScreenFragment : Fragment() {
 
     companion object {
         private const val PLAYER_POSITION_KEY = "player_position"
-        private const val SLIDESHOW_INTERVAL = 5000L // 5 seconds
     }
 }
