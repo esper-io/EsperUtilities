@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <com.google.android.exoplayer2.ui.StyledPlayerView
-        android:id="@+id/player_view"
+    <VideoView
+        android:id="@+id/secondaryDisplayVideoView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="?colorSurfaceInverse"
-        app:show_buffering="never"
-        app:show_shuffle_button="false"
-        app:show_subtitle_button="false"
-        app:use_controller="false"/>
+        android:layout_height="match_parent" />
 </FrameLayout>

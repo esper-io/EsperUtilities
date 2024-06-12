@@ -400,7 +400,6 @@
             android:exported="true"
             android:label="@string/imin_dual_screen_title"
             android:launchMode="singleTop"
-            android:excludeFromRecents="true"
             android:theme="@style/Theme.MaterialFiles" />
 
         <activity

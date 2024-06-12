@@ -11,34 +11,23 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.audio.AudioAttributes
-import com.google.android.exoplayer2.ui.PlayerView
 import io.esper.android.files.R
-import io.esper.android.files.databinding.IminAppLayoutPhotoBinding
-import io.esper.android.files.databinding.IminAppLayoutVideoBinding
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.GeneralUtils
+import io.esper.android.files.util.finish
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.constants.AppOpsPermissions
 import me.zhanghai.android.systemuihelper.SystemUiHelper
 import java.io.File
 
 class IminDualScreenFragment : Fragment() {
-    private lateinit var photoBinding: IminAppLayoutPhotoBinding
-    private lateinit var videoBinding: IminAppLayoutVideoBinding
     private lateinit var systemUiHelper: SystemUiHelper
     private val activity: AppCompatActivity by lazy { requireActivity() as AppCompatActivity }
-    private var player: SimpleExoPlayer? = null
     private var playerPosition: Long = 0
 
     private val slideshowHandler = Handler(Looper.getMainLooper())
@@ -46,58 +35,44 @@ class IminDualScreenFragment : Fragment() {
     private var currentPhotoIndex = 0
 
     private var presentation: Presentation? = null
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View = if (GeneralUtils.isIminUsingVideos()) {
-        IminAppLayoutVideoBinding.inflate(inflater, container, false)
-            .also { videoBinding = it }.root
-    } else {
-        IminAppLayoutPhotoBinding.inflate(inflater, container, false)
-            .also { photoBinding = it }.root
-    }
+    private var videoView: VideoView? = null
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        val activity = requireActivity() as AppCompatActivity
         systemUiHelper = SystemUiHelper(
             activity, SystemUiHelper.LEVEL_IMMERSIVE, SystemUiHelper.FLAG_IMMERSIVE_STICKY
         )
-        setHasOptionsMenu(true)
         if (!Settings.canDrawOverlays(requireContext())) {
             setupSDKActions()
-            showSecondByDisplayManager(requireContext())
         } else {
             init(savedInstanceState)
         }
     }
 
-    fun showSecondByDisplayManager(context: Context) {
+    private fun showSecondByDisplayManager(context: Context) {
         val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         val presentationDisplay = IminUtils.getPresentationDisplay(displayManager)
         if (presentationDisplay != null) {
             presentation = DifferentDisplay(context.applicationContext, presentationDisplay)
             presentation?.show()
+
+            // Initialize video view for presentation
+            videoView = presentation?.findViewById(R.id.secondaryDisplayVideoView)
         } else {
             Toast.makeText(context, "No secondary display found!", Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 
     private fun setupSDKActions() {
         GeneralUtils.isEsperDeviceSDKActivated(requireContext()) { activated ->
             if (activated) {
-                Log.d(
-                    Constants.IminDualScreenFragmentTag,
-                    "setupSDKActions: Esper Device SDK is activated"
-                )
+                Log.d(Constants.IminDualScreenFragmentTag, "Esper Device SDK is activated")
                 GeneralUtils.getEsperSDK(requireContext())
-                    .setAppOpMode(AppOpsPermissions.OP_SYSTEM_ALERT_WINDOW,
-                        true,
+                    .setAppOpMode(AppOpsPermissions.OP_SYSTEM_ALERT_WINDOW, true,
                         object : EsperDeviceSDK.Callback<Void> {
                             override fun onResponse(p0: Void?) {
-                                Log.i(
-                                    Constants.IminDualScreenFragmentTag,
-                                    "setupSDKActions: setAppOpMode onResponse: OP_WRITE_SETTINGS -> success"
-                                )
+                                Log.i(Constants.IminDualScreenFragmentTag, "Set AppOpMode success")
                                 requireActivity().runOnUiThread {
                                     init()
                                 }
@@ -115,30 +90,32 @@ class IminDualScreenFragment : Fragment() {
                                     startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
                                 }
                             }
-
                         })
             }
         }
     }
 
     private fun init(savedInstanceState: Bundle? = null) {
+        showSecondByDisplayManager(requireContext())
         if (GeneralUtils.isIminUsingVideos()) {
             setupPlayer(savedInstanceState)
         } else {
             setupPhoto()
         }
+        activity.moveTaskToBack(true)
     }
 
     private fun setupPhoto() {
         val sharedPrefManaged = requireContext().getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
-        val photosPath =
-            sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, null)
+        val photosPath = sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, null)
         photoFiles = photosPath?.let { File(it) }?.let { getPhotoFiles(it) } ?: emptyList()
 
         if (photoFiles.isNotEmpty()) {
             startSlideshow()
+        } else {
+            Log.e(Constants.IminDualScreenFragmentTag, "No photo files found")
         }
     }
 
@@ -146,7 +123,6 @@ class IminDualScreenFragment : Fragment() {
         val slideshowRunnable = object : Runnable {
             override fun run() {
                 if (photoFiles.isNotEmpty()) {
-                    photoBinding.photoView.setImageURI(Uri.fromFile(photoFiles[currentPhotoIndex]))
                     presentation?.findViewById<ImageView>(R.id.photoView)?.setImageURI(
                         Uri.fromFile(photoFiles[currentPhotoIndex])
                     )
@@ -159,58 +135,56 @@ class IminDualScreenFragment : Fragment() {
     }
 
     private fun setupPlayer(savedInstanceState: Bundle? = null) {
-        player = SimpleExoPlayer.Builder(activity).build()
-        player!!.setAudioAttributes(AudioAttributes.DEFAULT, true)
-        player!!.playWhenReady = true
-        player!!.repeatMode = Player.REPEAT_MODE_ALL
-        videoBinding.playerView.player = player
-        presentation?.findViewById<PlayerView>(R.id.player_view)?.player = player
-
-        if (savedInstanceState != null) {
-            playerPosition = savedInstanceState.getLong(PLAYER_POSITION_KEY, 0)
-        }
-
         val sharedPrefManaged = requireContext().getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
-        val videosPath =
-            sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, null)
-        val mediaItems = videosPath?.let { File(it) }?.let {
-            getVideoFiles(it).map { file ->
-                MediaItem.fromUri(Uri.parse(file.toString()))
-            }
+        val videosPath = sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PATH, null)
+        val videoFiles = videosPath?.let { File(it) }?.let { getVideoFiles(it) } ?: emptyList()
+
+        if (videoFiles.isNotEmpty()) {
+            playVideoFiles(videoFiles, savedInstanceState)
+        } else {
+            Log.e(Constants.IminDualScreenFragmentTag, "No video files found")
         }
-        mediaItems?.let { player!!.setMediaItems(it, false) }
-        player!!.prepare()
-        player!!.seekTo(playerPosition)
-        player!!.play()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putLong(PLAYER_POSITION_KEY, player?.currentPosition ?: 0)
+    private fun playVideoFiles(videoFiles: List<File>, savedInstanceState: Bundle? = null) {
+        if (videoFiles.isEmpty()) {
+            Log.e(Constants.IminDualScreenFragmentTag, "No video files found")
+            return
+        }
+        var currentIndex = 0
+        val videoUri = Uri.parse(videoFiles[currentIndex].toString())
+        videoView?.setVideoURI(videoUri)
+        videoView?.setOnPreparedListener { _ ->
+            if (savedInstanceState != null) {
+                playerPosition = savedInstanceState.getLong(PLAYER_POSITION_KEY, 0)
+                videoView?.seekTo(playerPosition.toInt())
+            }
+            videoView?.start()
+        }
+        videoView?.setOnErrorListener { _, what, extra ->
+            Log.e(Constants.IminDualScreenFragmentTag, "Error playing video: what=$what, extra=$extra")
+            true
+        }
+        videoView?.setOnCompletionListener {
+            currentIndex++
+            if (currentIndex < videoFiles.size) {
+                val nextVideoUri = Uri.parse(videoFiles[currentIndex].toString())
+                videoView?.setVideoURI(nextVideoUri)
+                videoView?.start()
+            } else {
+                Log.d(Constants.IminDualScreenFragmentTag, "All videos played, starting over.")
+                currentIndex = 0
+                val nextVideoUri = Uri.parse(videoFiles[currentIndex].toString())
+                videoView?.setVideoURI(nextVideoUri)
+                videoView?.start()
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        player?.release()
-        player = null
-        slideshowHandler.removeCallbacksAndMessages(null)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        player?.playWhenReady = false
-    }
-
-    override fun onResume() {
-        super.onResume()
-        player?.playWhenReady = true
-    }
-
-    override fun onStop() {
-        super.onStop()
-        player?.playWhenReady = false
         slideshowHandler.removeCallbacksAndMessages(null)
     }
 
@@ -232,14 +206,12 @@ class IminDualScreenFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (presentation != null) {
-            presentation!!.cancel()
-            presentation = null
-        }
+        presentation?.cancel()
+        presentation = null
     }
 
     companion object {
         private const val PLAYER_POSITION_KEY = "player_position"
-        private const val SLIDESHOW_INTERVAL = 10000L // 3 seconds
+        private const val SLIDESHOW_INTERVAL = 5000L // 5 seconds
     }
 }

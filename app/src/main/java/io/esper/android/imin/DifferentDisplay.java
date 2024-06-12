@@ -9,6 +9,7 @@ import android.view.Display;
 import io.esper.android.files.R;
 import io.esper.android.files.util.GeneralUtils;
 
+
 @SuppressLint("NewApi")
 public class DifferentDisplay extends Presentation {
 
