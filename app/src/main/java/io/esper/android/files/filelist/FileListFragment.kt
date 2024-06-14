@@ -1297,8 +1297,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION).apply {
                     extraPath = path
                     maybeAddImageViewerActivityExtras(this, path, mimeType)
-                    maybeAddPdfViewerActivityExtras(this, path, mimeType)
-                    maybeAddAudioVideoViewerActivityExtras(this, path, mimeType)
                 }.let {
                     if (withChooser) {
                         it.withChooser(
