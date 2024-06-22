@@ -1,0 +1,74 @@
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/camera_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Preview View for Camera -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/view_finder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:scaleType="fillStart" />
+
+    <!-- Overlay View -->
+    <io.esper.android.tflite.OverlayView
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_anchor="@+id/view_finder"
+        app:layout_anchorGravity="center" />
+
+    <!-- Linear Layout for ImageViews, wrapped in a CoordinatorLayout to enable BottomSheetBehavior -->
+    <LinearLayout
+        android:id="@+id/hidden_buttons_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <!-- Camera Switch ImageView -->
+        <ImageView
+            android:id="@+id/img_camera_switch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:src="@drawable/change_camera" />
+
+        <!-- Record ImageView -->
+        <ImageView
+            android:id="@+id/img_record"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:scaleX="0.75"
+            android:scaleY="0.75"
+            android:src="@drawable/record_stop" />
+
+        <!-- Show/Hide Overlay ImageView -->
+        <ImageView
+            android:id="@+id/img_show_hide_overlay"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:src="@drawable/view_overlay" />
+    </LinearLayout>
+
+    <!-- TextView at the bottom with gradient background -->
+    <TextView
+        android:id="@+id/model_text_display"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:background="@drawable/gradient_background_inverse"
+        android:gravity="center"
+        android:padding="16dp"
+        android:textColor="@android:color/white"
+        android:textSize="18sp" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -754,7 +754,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun refresh() {
-        context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
+        context?.let { ManagedConfigUtils.getManagedConfigValues(it, true) }
         context?.let { FileUtils.startScreenShotMove(it) }
         viewModel.reload()
         try {

@@ -126,6 +126,10 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER =
         "use_custom_tenant_for_network_tester"
 
+    // Tflite Specific
+    const val SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP = "convert_to_tflite_app"
+    const val SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH = "tflite_model_path"
+
     //iMin Specific
     const val SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP = "convert_to_imin_app"
     const val SHARED_MANAGED_CONFIG_IMIN_APP_PATH = "imin_app_path"

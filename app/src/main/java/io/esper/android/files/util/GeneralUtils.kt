@@ -35,6 +35,7 @@ import io.esper.android.files.filelist.FileListFragment
 import io.esper.android.files.util.Constants.GeneralUtilsTag
 import io.esper.android.imin.IminDualScreenActivity
 import io.esper.android.network.NetworkTesterActivity
+import io.esper.android.tflite.TfliteActivity
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.models.EsperDeviceInfo
 import io.esper.devicesdk.models.ProvisionInfo
@@ -67,7 +68,8 @@ object GeneralUtils {
         val conversionMap = mapOf(
             Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE to AppStoreActivity::class,
             Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER to NetworkTesterActivity::class,
-            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP to IminDualScreenActivity::class
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_IMIN_APP to IminDualScreenActivity::class,
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP to TfliteActivity::class
         )
 
         for ((key, activityClass) in conversionMap) {

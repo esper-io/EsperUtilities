@@ -121,64 +121,50 @@ object ManagedConfigUtils {
         sharedPrefManaged: SharedPreferences,
         wasIsItAForceRefresh: Boolean
     ) {
-
-        val appNameChange = appNameManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val internalRootPathChange =
-            internalRootPathManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val externalRootPathChange =
-            externalRootPathManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val showScreenshotsFolderChange =
-            showScreenshotsFolderManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val deletionAllowedChange =
-            deletionAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val onDemandDownloadChange =
-            onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val esperAppStoreVisibility =
-            esperAppStoreVisibilityManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val apiKeyChange = apiKeyManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val uploadContentChange =
-            uploadContentManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val shareAllowedChange =
-            shareAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val creationAllowedChange =
-            creationAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val addStorageChange = addStorageManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val ftpAllowedChange = ftpAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val showDeviceDetails =
-            showDeviceDetailsManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val convertFilesToAppStore = convertFilesToAppStoreManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val showNetworkTester = showNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val convertFilesToNetworkTester = convertFilesToNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val useCustomTenantForNetworkTester = useCustomTenantForNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val convertFilesToIminApp = convertFilesToIminAppManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val iMinAppPath = iMinAppPathManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val isIminAppUsingVideos = iMinAppVideoManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val iMinPhotoSlideShowInterval = iMinPhotoSlideShowIntervalManagedConfig(
-            context, appRestrictions, sharedPrefManaged
+        val restartConfigFunctions = listOf(
+            ::appNameManagedConfig,
+            ::showScreenshotsFolderManagedConfig,
+            ::deletionAllowedManagedConfig,
+            ::apiKeyManagedConfig,
+            ::uploadContentManagedConfig,
+            ::shareAllowedManagedConfig,
+            ::creationAllowedManagedConfig
         )
 
+        val rebirthConfigFunctions = listOf(
+            ::internalRootPathManagedConfig,
+            ::externalRootPathManagedConfig,
+            ::onDemandDownloadManagedConfig,
+            ::esperAppStoreVisibilityManagedConfig,
+            ::addStorageManagedConfig,
+            ::ftpAllowedManagedConfig,
+            ::showDeviceDetailsManagedConfig,
+            ::convertFilesToAppStoreManagedConfig,
+            ::showNetworkTesterManagedConfig,
+            ::convertFilesToNetworkTesterManagedConfig,
+            ::useCustomTenantForNetworkTesterManagedConfig,
+            ::convertFilesToIminAppManagedConfig,
+            ::iMinAppPathManagedConfig,
+            ::iMinAppVideoManagedConfig,
+            ::iMinPhotoSlideShowIntervalManagedConfig,
+            ::convertFilesToTfliteAppManagedConfig,
+            ::tfliteModelPathManagedConfig
+        )
 
-        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
+        val restartChanges =
+            restartConfigFunctions.map { it(context, appRestrictions, sharedPrefManaged) }
+        val rebirthChanges =
+            rebirthConfigFunctions.map { it(context, appRestrictions, sharedPrefManaged) }
+
+        val needsRestart = restartChanges.any { it } || wasIsItAForceRefresh
+        val needsRebirth = rebirthChanges.any { it }
+
+        if (needsRestart) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
-        }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester || convertFilesToIminApp || iMinAppPath || isIminAppUsingVideos || iMinPhotoSlideShowInterval) {
-            if (!apiKeyChange) {
-                Log.i(Constants.ManagedConfigUtilsTag, " Changed, Restart App")
+        } else if (needsRebirth) {
+            if (!restartChanges[3]) { // Specifically checking apiKeyManagedConfig result
+                Log.i(Constants.ManagedConfigUtilsTag, "Changed, Restart App")
                 GeneralUtils.triggerRebirth(context)
             } else {
                 Log.i(
@@ -679,10 +665,59 @@ object ManagedConfigUtils {
         )
         if (changeInValue) {
             sharedPrefManaged.edit().putInt(
-                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL, iMinPhotoSlideShowInterval
+                Constants.SHARED_MANAGED_CONFIG_IMIN_APP_PHOTOS_SLIDESHOW_INTERVAL,
+                iMinPhotoSlideShowInterval
             ).apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "iMin App Photos Slide Show Interval Changed")
+        }
+        return result
+    }
+
+    private fun convertFilesToTfliteAppManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val convertFilesToTfliteApp =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP
+            ) else false
+        val changeInValue = convertFilesToTfliteApp != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit().putBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_TO_TFLITE_APP, convertFilesToTfliteApp
+            ).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To Tflite App Changed")
+        }
+        return result
+    }
+
+    private fun tfliteModelPathManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val tfliteModelPath =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH)) appRestrictions.getString(
+                Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH
+            ) else null
+
+        val changeInValue = tfliteModelPath != sharedPrefManaged.getString(
+            Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH, null
+        )
+        if (changeInValue && tfliteModelPath.isNullOrEmpty()) {
+            sharedPrefManaged.edit().remove(Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH)
+                .apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Tflite App Path Removed")
+        } else if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putString(Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH, tfliteModelPath)
+                .apply()
+            result = true
+            Log.i(Constants.SHARED_MANAGED_CONFIG_TFLITE_MODEL_PATH, "Tflite App Path Changed")
         }
         return result
     }
