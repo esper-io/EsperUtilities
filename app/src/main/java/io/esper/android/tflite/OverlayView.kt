@@ -16,21 +16,26 @@ import kotlin.math.max
 
 class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
-    private var results: List<Detection> = LinkedList<Detection>()
+    private var results: List<Detection> = LinkedList()
     private var boxPaint = Paint()
     private var textBackgroundPaint = Paint()
-    private var textPaint = Paint()
-
+    private var textPaintLabel = Paint()
+    private var textPaintScore = Paint()
     private var scaleFactor: Float = 1f
-
     private var bounds = Rect()
+
+    // Preallocate objects to avoid allocation during onDraw
+    private val drawableRect = RectF()
+    private val textRect = RectF()
+    private val drawableTextBuilder = StringBuilder()
 
     init {
         initPaints()
     }
 
     fun clear() {
-        textPaint.reset()
+        textPaintLabel.reset()
+        textPaintScore.reset()
         textBackgroundPaint.reset()
         boxPaint.reset()
         invalidate()
@@ -38,69 +43,92 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     }
 
     private fun initPaints() {
-        textBackgroundPaint.color = Color.BLACK
-        textBackgroundPaint.style = Paint.Style.FILL
-        textBackgroundPaint.textSize = 50f
+        // Set the color of the bounding box and text background to the same value
+        val boundingBoxColor = ContextCompat.getColor(context!!, R.color.bounding_box_color)
 
-        textPaint.color = Color.WHITE
-        textPaint.style = Paint.Style.FILL
-        textPaint.textSize = 50f
+        boxPaint.apply {
+            color = boundingBoxColor
+            strokeWidth = 8f
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+        }
 
-        boxPaint.color = ContextCompat.getColor(context!!, R.color.bounding_box_color)
-        boxPaint.strokeWidth = 8F
-        boxPaint.style = Paint.Style.STROKE
+        textBackgroundPaint.apply {
+            color = boundingBoxColor
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+
+        textPaintLabel.apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+            textSize = 50f
+        }
+
+        textPaintScore.apply {
+            style = Paint.Style.FILL
+            textSize = 50f
+        }
     }
 
-    override fun draw(canvas: Canvas) {
-        super.draw(canvas)
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
 
         for (result in results) {
             val boundingBox = result.boundingBox
 
-            val top = boundingBox.top * scaleFactor
-            val bottom = boundingBox.bottom * scaleFactor
             val left = boundingBox.left * scaleFactor
+            val top = boundingBox.top * scaleFactor
             val right = boundingBox.right * scaleFactor
+            val bottom = boundingBox.bottom * scaleFactor
 
-            // Draw bounding box around detected objects
-            val drawableRect = RectF(left, top, right, bottom)
-            canvas.drawRect(drawableRect, boxPaint)
+            // Draw rounded bounding box around detected objects
+            drawableRect.set(left, top, right, bottom)
+            canvas.drawRoundRect(drawableRect, BOX_CORNER_RADIUS, BOX_CORNER_RADIUS, boxPaint)
 
-            // Create text to display alongside detected objects
-            val drawableText =
-                result.categories[0].label + " " +
-                        String.format("%.2f", result.categories[0].score)
+            // Create text to display above detected objects
+            drawableTextBuilder.setLength(0)  // Clear the builder
+            val label = result.categories[0].label
+            val score = String.format("%.2f", result.categories[0].score)
 
-            // Draw rect behind display text
-            textBackgroundPaint.getTextBounds(drawableText, 0, drawableText.length, bounds)
-            val textWidth = bounds.width()
-            val textHeight = bounds.height()
-            canvas.drawRect(
-                left,
-                top,
-                left + textWidth + BOUNDING_RECT_TEXT_PADDING,
-                top + textHeight + BOUNDING_RECT_TEXT_PADDING,
-                textBackgroundPaint
-            )
+            // Set score text color based on its value
+            textPaintScore.color = if (result.categories[0].score > 0.7) {
+                Color.GREEN
+            } else if (result.categories[0].score > 0.45) {
+                Color.YELLOW
+            } else {
+                Color.RED
+            }
 
-            // Draw text for detected object
-            canvas.drawText(drawableText, left, top + bounds.height(), textPaint)
+            // Calculate text bounds
+            textPaintLabel.getTextBounds(label, 0, label.length, bounds)
+            val labelWidth = bounds.width()
+            val labelHeight = bounds.height()
+            textPaintScore.getTextBounds(score, 0, score.length, bounds)
+            val scoreWidth = bounds.width()
+            val scoreHeight = bounds.height()
+
+            // Draw rect behind display text, extending from the top of the bounding box
+            val totalTextWidth = labelWidth + scoreWidth + TEXT_PADDING * 2
+            textRect.set(left, top - labelHeight - TEXT_PADDING * 4, left + totalTextWidth + BOUNDING_RECT_TEXT_PADDING * 2, top)
+            canvas.drawRect(textRect, textBackgroundPaint)
+
+            // Draw label text
+            canvas.drawText(label, left + TEXT_PADDING, top - TEXT_PADDING * 2 - labelHeight / 2, textPaintLabel)
+
+            // Draw score text
+            canvas.drawText(score, left + labelWidth + TEXT_PADDING * 2, top - TEXT_PADDING * 2 - scoreHeight / 2, textPaintScore)
         }
     }
 
-    fun setResults(
-        detectionResults: MutableList<Detection>,
-        imageHeight: Int,
-        imageWidth: Int,
-    ) {
+    fun setResults(detectionResults: MutableList<Detection>, imageHeight: Int, imageWidth: Int) {
         results = detectionResults
-
-        // PreviewView is in FILL_START mode. So we need to scale up the bounding box to match with
-        // the size that the captured images will be displayed.
         scaleFactor = max(width * 1f / imageWidth, height * 1f / imageHeight)
     }
 
     companion object {
-        private const val BOUNDING_RECT_TEXT_PADDING = 8
+        private const val BOUNDING_RECT_TEXT_PADDING = 16
+        private const val BOX_CORNER_RADIUS = 20f
+        private const val TEXT_PADDING = 10f
     }
 }

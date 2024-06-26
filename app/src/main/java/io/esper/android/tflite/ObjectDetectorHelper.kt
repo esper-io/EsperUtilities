@@ -17,9 +17,9 @@ import org.tensorflow.lite.task.vision.detector.ObjectDetector
 import java.io.File
 
 class ObjectDetectorHelper(
-    private var threshold: Float = 0.5f,
+    private var threshold: Float = 0.4f,
     private var numThreads: Int = 3,
-    private var maxResults: Int = 5,
+    private var maxResults: Int = 4,
     val context: Context,
     val objectDetectorListener: DetectorListener?
 ) {
