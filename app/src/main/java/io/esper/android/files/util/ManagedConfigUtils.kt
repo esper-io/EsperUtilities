@@ -22,6 +22,10 @@ object ManagedConfigUtils {
 //        //(default: false)
 //        "deletion_allowed": true,
 //        //(default: false)
+//        "archive_allowed": true,
+//        //(default: false)
+//        "rename_allowed": true,
+//        //(default: false)
 //        "on_demand_download": true,
 //        //(default: null)
 //        "api_key": "dummy",
@@ -56,6 +60,8 @@ object ManagedConfigUtils {
 //        "app_name": "Files",
 //        "show_screenshots_folder": true,
 //        "deletion_allowed": true,
+//        "archive_allowed": true,
+//        "rename_allowed": true,
 //        "on_demand_download": true,
 //        "api_key": "",
 //        "upload_content": true,
@@ -78,6 +84,8 @@ object ManagedConfigUtils {
 //        "app_name": "Files",
 //        "show_screenshots_folder": false,
 //        "deletion_allowed": false,
+//        "archive_allowed": false,
+//        "rename_allowed": false,
 //        "on_demand_download": false,
 //        "api_key": "",
 //        "upload_content": false,
