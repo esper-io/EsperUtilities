@@ -460,6 +460,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
+        menu.findItem(R.id.action_share).isVisible = GeneralUtils.isSharingAllowed()
+        menu.findItem(R.id.action_upload).isVisible = GeneralUtils.isUploadContentAllowed()
         updateViewSortMenuItems()
     }
 
@@ -910,11 +912,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     R.string.copy
                 }
             )
-            menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
+            menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly and GeneralUtils.isDeletionAllowed()
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
             val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
-            menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly
+            menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly and GeneralUtils.isArchiveAllowed()
+            menu.findItem(R.id.action_share).isVisible = GeneralUtils.isSharingAllowed()
+            menu.findItem(R.id.action_upload).isVisible = GeneralUtils.isUploadContentAllowed()
         }
         if (!overlayActionMode.isActive) {
             binding.appBarLayout.setExpanded(true)
@@ -955,14 +959,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
 
         R.id.action_delete -> {
-            if (sharedPrefManaged.getBoolean(
-                    Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, false
-                )
-            ) {
-                confirmDeleteFiles(viewModel.selectedFiles)
-            } else {
-                context?.showToast(R.string.delete_disabled)
-            }
+            confirmDeleteFiles(viewModel.selectedFiles)
             true
         }
 
@@ -1522,7 +1519,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 showToast(R.string.upload_directory_fail)
                 return
             }
-            UploadDownloadUtils.upload(path.toString(), name, requireContext(), requireActivity())
+            UploadDownloadUtils.upload(path.toString(), GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}-$name", requireContext(), requireActivity())
         } else {
             showToast(R.string.upload_disabled)
             return

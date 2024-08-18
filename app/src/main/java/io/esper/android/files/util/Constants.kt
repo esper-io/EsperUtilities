@@ -113,6 +113,8 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH = "external_root_path"
     const val SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE = "add_storage"
     const val SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED = "ftp_allowed"
+    const val SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED = "archive_allowed"
+    const val SHARED_MANAGED_CONFIG_RENAME_ALLOWED = "rename_allowed"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT = "auto_upload_content"
     const val SHARED_MANAGED_CONFIG_AUTO_UPLOAD_CONTENT_INTERVAL = "auto_upload_content_interval"
     const val SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS = "show_device_details"

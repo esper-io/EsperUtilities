@@ -39,10 +39,7 @@ import java8.nio.file.Paths
 
 val navigationItems: List<NavigationItem?>
     get() = mutableListOf<NavigationItem?>().apply {
-        if (GeneralUtils.getDeviceName(application) != null && GeneralUtils.showDeviceDetails(
-                application
-            )
-        ) {
+        if (GeneralUtils.getDeviceName(application) != null && GeneralUtils.showDeviceDetails()) {
             addAll(deviceDetails)
             add(null)
         }
@@ -409,7 +406,7 @@ private val menuItems: List<NavigationItem>
                 )
             )
         }
-        if (GeneralUtils.isEsperAppStoreVisible(application)  && GeneralUtils.getApiKey(application) != null) {
+        if (GeneralUtils.isEsperAppStoreVisible(application) && GeneralUtils.getApiKey(application) != null) {
             items.add(
                 IntentMenuItem(
                     R.drawable.esper_app_store_icon,

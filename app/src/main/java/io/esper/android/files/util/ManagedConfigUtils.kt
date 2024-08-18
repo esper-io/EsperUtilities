@@ -131,6 +131,10 @@ object ManagedConfigUtils {
             showScreenshotsFolderManagedConfig(context, appRestrictions, sharedPrefManaged)
         val deletionAllowedChange =
             deletionAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val archivingAllowedChange =
+            archivingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val renamingAllowedChange =
+            renamingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val onDemandDownloadChange =
             onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
         val esperAppStoreVisibility =
@@ -159,7 +163,7 @@ object ManagedConfigUtils {
             context, appRestrictions, sharedPrefManaged
         )
 
-        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
+        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || archivingAllowedChange || renamingAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
@@ -303,6 +307,46 @@ object ManagedConfigUtils {
                 .apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Deletion Allowed Changed")
+        }
+        return result
+    }
+
+    private fun archivingAllowedManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val archiveAllowed =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED
+            ) else false
+        val changeInValue = archiveAllowed != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putBoolean(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, archiveAllowed).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Archive Allowed Changed")
+        }
+        return result
+    }
+
+    private fun renamingAllowedManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val renameAllowed =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED
+            ) else false
+        val changeInValue = renameAllowed != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putBoolean(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, renameAllowed).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Rename Allowed Changed")
         }
         return result
     }

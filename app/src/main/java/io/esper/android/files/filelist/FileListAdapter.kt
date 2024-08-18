@@ -30,6 +30,7 @@ import io.esper.android.files.settings.Settings
 import io.esper.android.files.ui.AnimatedListAdapter
 import io.esper.android.files.ui.CheckableForegroundLinearLayout
 import io.esper.android.files.ui.CheckableItemBackground
+import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.isMaterial3Theme
 import io.esper.android.files.util.layoutInflater
 import io.esper.android.files.util.valueCompat
@@ -328,11 +329,14 @@ class FileListAdapter(
         val isArchivePath = path.isArchivePath
         menu.findItem(R.id.action_copy)
             .setTitle(if (isArchivePath) R.string.file_item_action_extract else R.string.copy)
-        menu.findItem(R.id.action_delete).isVisible = !isReadOnly
-        menu.findItem(R.id.action_rename).isVisible = !isReadOnly
+        menu.findItem(R.id.action_delete).isVisible = !isReadOnly and GeneralUtils.isDeletionAllowed()
+        menu.findItem(R.id.action_rename).isVisible = !isReadOnly and GeneralUtils.isRenameAllowed()
         menu.findItem(R.id.action_extract).isVisible = file.isArchiveFile
-        menu.findItem(R.id.action_archive).isVisible = !isArchivePath
+        menu.findItem(R.id.action_archive).isVisible = !isArchivePath and GeneralUtils.isArchiveAllowed()
+        menu.findItem(R.id.action_share).isVisible = GeneralUtils.isSharingAllowed()
+        menu.findItem(R.id.action_upload).isVisible = GeneralUtils.isUploadContentAllowed()
 //        menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
+
         holder.popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_open_with -> {

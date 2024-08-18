@@ -108,7 +108,9 @@ object UploadDownloadUtils {
                 context
             ) == null) {
             Toast.makeText(context, "Info not available for upload, please set it in the managed config.", Toast.LENGTH_SHORT).show()
-            FileUtils.deleteFile(filePath)
+            if (deleteFile) {
+                FileUtils.deleteFile(filePath)
+            }
             return
         }
         Toast.makeText(context, "$fileName Upload Starting", Toast.LENGTH_SHORT).show()

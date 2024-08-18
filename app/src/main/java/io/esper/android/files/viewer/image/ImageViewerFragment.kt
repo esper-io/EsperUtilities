@@ -15,14 +15,12 @@ import androidx.fragment.app.Fragment
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.viewpager2.widget.ViewPager2
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
-import java8.nio.file.Path
-import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.WriteWith
 import io.esper.android.files.R
 import io.esper.android.files.databinding.ImageViewerFragmentBinding
 import io.esper.android.files.file.fileProviderUri
 import io.esper.android.files.provider.common.delete
 import io.esper.android.files.ui.DepthPageTransformer
+import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.ParcelableArgs
 import io.esper.android.files.util.ParcelableListParceler
 import io.esper.android.files.util.ParcelableState
@@ -37,6 +35,9 @@ import io.esper.android.files.util.putState
 import io.esper.android.files.util.showToast
 import io.esper.android.files.util.startActivitySafe
 import io.esper.android.files.util.withChooser
+import java8.nio.file.Path
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.systemuihelper.SystemUiHelper
 import java.io.IOException
 
@@ -132,24 +133,26 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         outState.putState(State(paths))
     }
 
-//    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-//        super.onCreateOptionsMenu(menu, inflater)
-//
-//        inflater.inflate(R.menu.image_viewer, menu)
-//    }
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
 
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-//        when (item.itemId) {
-//            R.id.action_delete -> {
-//                confirmDelete()
-//                true
-//            }
-//            R.id.action_share -> {
-//                share()
-//                true
-//            }
-//            else -> super.onOptionsItemSelected(item)
-//        }
+        inflater.inflate(R.menu.image_viewer, menu)
+        menu.findItem(R.id.action_delete).isVisible = GeneralUtils.isDeletionAllowed()
+        menu.findItem(R.id.action_share).isVisible = GeneralUtils.isSharingAllowed()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.action_delete -> {
+                confirmDelete()
+                true
+            }
+            R.id.action_share -> {
+                share()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
 
     private fun confirmDelete() {
         ConfirmDeleteDialogFragment.show(currentPath, this)

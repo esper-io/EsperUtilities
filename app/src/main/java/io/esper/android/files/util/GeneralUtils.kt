@@ -26,6 +26,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.esper.android.files.BuildConfig
 import io.esper.android.files.R
+import io.esper.android.files.app.application
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.filelist.FileListFragment
 import io.esper.android.files.util.Constants.GeneralUtilsTag
@@ -120,8 +121,7 @@ object GeneralUtils {
 
                 override fun onFailure(t: Throwable) {
                     Log.d(
-                        GeneralUtilsTag,
-                        "activateSDK: Callback.onFailure: message : " + t.message
+                        GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
                     )
                 }
             })
@@ -158,8 +158,8 @@ object GeneralUtils {
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false)
     }
 
-    fun showDeviceDetails(context: Context): Boolean {
-        return context.getSharedPreferences(
+    fun showDeviceDetails(): Boolean {
+        return application.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false)
     }
@@ -186,8 +186,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    GeneralUtilsTag,
-                    "getProvisionInfo: Callback.onFailure: message : " + t.message
+                    GeneralUtilsTag, "getProvisionInfo: Callback.onFailure: message : " + t.message
                 )
             }
         })
@@ -349,8 +348,7 @@ object GeneralUtils {
 
             override fun onFailure(t: Throwable) {
                 Log.d(
-                    GeneralUtilsTag,
-                    "activateSDK: Callback.onFailure: message : " + t.message
+                    GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
                 )
                 // Call the callback with a default value or handle failure case as needed
                 callback(false)
@@ -488,9 +486,7 @@ object GeneralUtils {
     }
 
     fun fetchAndStoreBaseStackName(
-        context: Context,
-        tenantInput: String,
-        callback: BaseStackNameCallback
+        context: Context, tenantInput: String, callback: BaseStackNameCallback
     ) {
         val url =
             "https://mission1-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
@@ -608,6 +604,36 @@ object GeneralUtils {
         } catch (e: Exception) {
             Log.e(GeneralUtilsTag, "Error creating directory: $path", e)
         }
+    }
+
+    fun isDeletionAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, false)
+    }
+
+    fun isArchiveAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, false)
+    }
+
+    fun isRenameAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, false)
+    }
+
+    fun isSharingAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED, false)
+    }
+
+    fun isUploadContentAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false)
     }
 
     interface BaseStackNameCallback {
