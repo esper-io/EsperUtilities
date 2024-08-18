@@ -489,7 +489,7 @@ object GeneralUtils {
         context: Context, tenantInput: String, callback: BaseStackNameCallback
     ) {
         val url =
-            "https://mission1-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
+            "https://mission-control-api.esper.cloud/api/06-2020/mission-control/companies/?endpoint=$tenantInput"
         val client = OkHttpClient()
         val request = Request.Builder().url(url)
             .addHeader("authorization", BuildConfig.MISSION_CONTROL_API_KEY).build()
