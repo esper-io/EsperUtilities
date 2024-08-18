@@ -105,14 +105,24 @@ class ApplicationsAdapter : RecyclerView.Adapter<ApplicationsAdapter.ItemViewHol
                 Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
             )
         }
+        if (appsList.isNullOrEmpty()) {
+            // Handle empty list scenario
+            return
+        }
+
         val currentItem = appsList!![position]
 
         holder.txtTitle.text = currentItem.application_name
         holder.txtInfo.text = currentItem.package_name
 
-        Glide.with(mContext!!).load(currentItem.versions!![0].icon_url)
-            .placeholder(R.mipmap.file_shortcut_icon).optionalCenterCrop().priority(Priority.HIGH)
-            .into(holder.imgThumbnail)
+        if (currentItem.versions.isNullOrEmpty()) {
+            // Handle empty or null versions list
+            holder.imgThumbnail.setImageResource(R.mipmap.file_shortcut_icon) // Set a default image or hide the view
+        } else {
+            Glide.with(mContext!!).load(currentItem.versions!![0].icon_url)
+                .placeholder(R.mipmap.file_shortcut_icon).optionalCenterCrop().priority(Priority.HIGH)
+                .into(holder.imgThumbnail)
+        }
 
         holder.installBtn.setOnClickListener { }
         holder.updateBtn.setOnClickListener { }
