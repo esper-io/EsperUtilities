@@ -41,6 +41,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -137,6 +138,9 @@ import io.esper.android.files.viewer.image.ImageViewerActivity
 import io.esper.android.files.viewer.pdf.PdfViewerActivity
 import java8.nio.file.Path
 import java8.nio.file.Paths
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.math.roundToInt
 
@@ -749,9 +753,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun refresh() {
-        context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
-        context?.let { FileUtils.startScreenShotMove(it) }
-        viewModel.reload()
+        viewLifecycleOwner.lifecycleScope.launch {
+            context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
+            // Perform background operations in IO dispatcher
+            withContext(Dispatchers.IO) {
+                context?.let { FileUtils.startScreenShotMove(it) }
+            }
+            // Switch back to the main thread to call viewModel.reload()
+            viewModel.reload()
+        }
     }
 
     private fun setShowHiddenFiles(showHiddenFiles: Boolean) {
@@ -913,10 +923,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
             )
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
-            menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly and GeneralUtils.isDeletionAllowed()
+            menu.findItem(R.id.action_delete).isVisible =
+                !isAnyFileReadOnly and GeneralUtils.isDeletionAllowed()
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
             val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
-            menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly and GeneralUtils.isArchiveAllowed()
+            menu.findItem(R.id.action_archive).isVisible =
+                !isCurrentPathReadOnly and GeneralUtils.isArchiveAllowed()
             menu.findItem(R.id.action_share).isVisible = GeneralUtils.isSharingAllowed()
             menu.findItem(R.id.action_upload).isVisible = GeneralUtils.isUploadContentAllowed()
         }
@@ -979,7 +991,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
 
         R.id.action_upload -> {
-            context?.let { zipAndUpload(it, viewModel.selectedFiles) }
+            zipAndUpload(viewModel.selectedFiles)
             true
         }
 
@@ -1367,9 +1379,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun maybeAddAudioVideoViewerActivityExtras(
-        intent: Intent,
-        path: Path,
-        mimeType: MimeType
+        intent: Intent, path: Path, mimeType: MimeType
     ) {
         if (!mimeType.isAudio && !mimeType.isVideo) {
             return
@@ -1483,8 +1493,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
     }
 
-    private fun zipAndUpload(context: Context, files: FileItemSet) {
-        if (context.getSharedPreferences(
+    private fun zipAndUpload(files: FileItemSet) {
+        if (requireContext().getSharedPreferences(
                 Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
             )?.getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false) == true
         ) {
@@ -1496,9 +1506,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             // Pass filePathsToZip to CompressMultipleFiles method
             UploadDownloadUtils.CompressMultipleFiles(
-                context,
+                requireContext(),
                 filePathsToZip,
-                GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
+                GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}.zip",
                 requireActivity(),
                 sharedPrefManaged,
                 true
@@ -1519,7 +1529,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 showToast(R.string.upload_directory_fail)
                 return
             }
-            UploadDownloadUtils.upload(path.toString(), GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}-$name", requireContext(), requireActivity())
+            UploadDownloadUtils.upload(
+                path.toString(),
+                GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}-$name",
+                requireContext(),
+                requireActivity()
+            )
         } else {
             showToast(R.string.upload_disabled)
             return

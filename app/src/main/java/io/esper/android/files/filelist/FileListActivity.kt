@@ -50,26 +50,29 @@ class FileListActivity : AppActivity() {
         }
     }
 
-    private fun initFragment(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) {
-            fragment = FileListFragment().putArgs(FileListFragment.Args(intent))
-            supportFragmentManager.commit { add(android.R.id.content, fragment) }
-        } else {
-            fragment =
-                supportFragmentManager.findFragmentById(android.R.id.content) as FileListFragment
-        }
+    private fun initSharedPrefs() {
+        sharedPrefManaged =
+            getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
     }
 
     private fun checkAndConvertApp(savedInstanceState: Bundle?) {
         // Check if the files app need to be converted to app store
-        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false)) {
+        if (sharedPrefManaged!!.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE,
+                false
+            )
+        ) {
             startActivity(AppStoreActivity::class.createIntent())
             finish()
             return
         }
 
         // Check if the files app need to be converted to network tester
-        if (sharedPrefManaged!!.getBoolean(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false)) {
+        if (sharedPrefManaged!!.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
+                false
+            )
+        ) {
             startActivity(NetworkTesterActivity::class.createIntent())
             finish()
             return
@@ -78,9 +81,14 @@ class FileListActivity : AppActivity() {
         initFragment(savedInstanceState)
     }
 
-    private fun initSharedPrefs() {
-        sharedPrefManaged =
-            getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
+    private fun initFragment(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) {
+            fragment = FileListFragment().putArgs(FileListFragment.Args(intent))
+            supportFragmentManager.commit { add(android.R.id.content, fragment) }
+        } else {
+            fragment =
+                supportFragmentManager.findFragmentById(android.R.id.content) as FileListFragment
+        }
     }
 
     override fun onKeyShortcut(keyCode: Int, event: KeyEvent): Boolean {

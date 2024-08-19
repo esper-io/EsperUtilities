@@ -28,6 +28,8 @@ object Constants {
     const val AppStoreFragmentTag = "AppStoreFragment"
     const val NetworkTesterFragmentTag = "NetworkTesterFragment"
 
+    const val SORT_ASCENDING = "ascending"
+
     // SharedPreference keys
     const val ORIGINAL_SCREENSHOT_STORAGE_VALUE = "OGScreenshotFolder"
 
@@ -39,15 +41,16 @@ object Constants {
 
     const val SHARED_MANAGED_CONFIG_VALUES = "ManagedConfig"
     const val SHARED_MANAGED_CONFIG_APP_NAME = "app_name"
-    const val SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS = "show_screenshots_folder"
-    const val SHARED_MANAGED_CONFIG_DELETION_ALLOWED = "deletion_allowed"
-    const val SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD = "on_demand_download"
-    const val SHARED_MANAGED_CONFIG_TENANT = "tenant"
 
     // only used locally for now
     const val SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER = "tenant_for_network_tester"
     const val SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER = "streamer_for_network_tester"
     const val SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER = "base_stack_for_network_tester"
+
+    const val SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS = "show_screenshots_folder"
+    const val SHARED_MANAGED_CONFIG_DELETION_ALLOWED = "deletion_allowed"
+    const val SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD = "on_demand_download"
+    const val SHARED_MANAGED_CONFIG_TENANT = "tenant"
 
     const val SHARED_MANAGED_CONFIG_ENTERPRISE_ID = "enterprise_id"
     const val SHARED_MANAGED_CONFIG_API_KEY = "api_key"
@@ -68,6 +71,4 @@ object Constants {
         "convert_files_to_network_tester"
     const val SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER =
         "use_custom_tenant_for_network_tester"
-
-    const val SORT_ASCENDING: String = "ascending"
 }
