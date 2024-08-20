@@ -636,6 +636,12 @@ object GeneralUtils {
         ).getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false)
     }
 
+    fun isCutCopyAllowed(): Boolean {
+        return application.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, false)
+    }
+
     interface BaseStackNameCallback {
         fun onBaseStackNameFetched(baseStackName: String)
         fun onError(e: Exception)

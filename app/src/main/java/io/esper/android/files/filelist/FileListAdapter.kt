@@ -219,8 +219,8 @@ class FileListAdapter(
         val path = file.path
         val hasPickOptions = pickOptions != null
         val isReadOnly = path.fileSystem.isReadOnly
-        menu.findItem(R.id.action_cut).isVisible = !hasPickOptions && !isReadOnly
-        menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
+        menu.findItem(R.id.action_cut).isVisible = !hasPickOptions and !isReadOnly and GeneralUtils.isCutCopyAllowed()
+        menu.findItem(R.id.action_copy).isVisible = !hasPickOptions and GeneralUtils.isCutCopyAllowed()
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
         holder.nameText.apply {
