@@ -26,6 +26,8 @@ object ManagedConfigUtils {
 //        //(default: false)
 //        "rename_allowed": true,
 //        //(default: false)
+//        "cut_copy_allowed": true,
+//        //(default: false)
 //        "on_demand_download": true,
 //        //(default: null)
 //        "api_key": "dummy",
@@ -62,6 +64,7 @@ object ManagedConfigUtils {
 //        "deletion_allowed": true,
 //        "archive_allowed": true,
 //        "rename_allowed": true,
+//        "cut_copy_allowed": true,
 //        "on_demand_download": true,
 //        "api_key": "",
 //        "upload_content": true,
@@ -86,6 +89,7 @@ object ManagedConfigUtils {
 //        "deletion_allowed": false,
 //        "archive_allowed": false,
 //        "rename_allowed": false,
+//        "cut_copy_allowed": false,
 //        "on_demand_download": false,
 //        "api_key": "",
 //        "upload_content": false,
@@ -143,6 +147,8 @@ object ManagedConfigUtils {
             archivingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val renamingAllowedChange =
             renamingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val cutCopyAllowedChange =
+            cutCopyAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
         val onDemandDownloadChange =
             onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
         val esperAppStoreVisibility =
@@ -171,7 +177,7 @@ object ManagedConfigUtils {
             context, appRestrictions, sharedPrefManaged
         )
 
-        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || archivingAllowedChange || renamingAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
+        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || cutCopyAllowedChange || archivingAllowedChange || renamingAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
             Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
             GeneralUtils.restart(context)
         }
@@ -355,6 +361,26 @@ object ManagedConfigUtils {
                 .putBoolean(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, renameAllowed).apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Rename Allowed Changed")
+        }
+        return result
+    }
+
+    private fun cutCopyAllowedManagedConfig(
+        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+    ): Boolean {
+        var result = false
+        val cutCopyAllowed =
+            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED)) appRestrictions.getBoolean(
+                Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED
+            ) else false
+        val changeInValue = cutCopyAllowed != sharedPrefManaged.getBoolean(
+            Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, false
+        )
+        if (changeInValue) {
+            sharedPrefManaged.edit()
+                .putBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, cutCopyAllowed).apply()
+            result = true
+            Log.i(Constants.ManagedConfigUtilsTag, "Cut Copy Allowed Changed")
         }
         return result
     }

@@ -29,6 +29,7 @@ import net.gotev.uploadservice.placeholders.Placeholder
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest
 import net.lingala.zip4j.ZipFile
 import java.io.File
+import java.util.UUID
 
 object UploadDownloadUtils {
 
@@ -102,7 +103,8 @@ object UploadDownloadUtils {
         fileName: String,
         context: Context,
         lifecycleOwner: LifecycleOwner,
-        deleteFile: Boolean = false
+        deleteFile: Boolean = false,
+        fromService: Boolean = false
     ) {
         if (GeneralUtils.getDeviceName(
                 context
@@ -124,9 +126,14 @@ object UploadDownloadUtils {
 
         val url = "$tenant/api/v0/enterprise/$enterpriseId/content/upload/"
 
+        val uploadId = if (fromService) {
+            "service-${filePath}"
+        } else {
+            UUID.randomUUID().toString()
+        }
         MultipartUploadRequest(context, url).addFileToUpload(
             filePath = filePath, parameterName = "key"
-        ).setBearerAuth(apiKey!!).setNotificationConfig { context, uploadId ->
+        ).setBearerAuth(apiKey!!).setMaxRetries(3).setUploadID(uploadId).setNotificationConfig { context, uploadId ->
             val title = "Esper File Upload (${fileName})"
             UploadNotificationConfig(
                 notificationChannelId = defaultNotificationChannel!!,
@@ -147,7 +154,7 @@ object UploadDownloadUtils {
                     message = "Upload completed successfully in ${Placeholder.ElapsedTime}"
                 ),
                 error = UploadNotificationStatusConfig(
-                    title = title, message = "Error during upload"
+                    title = title, message = "Error during upload, retry later."
                 ),
                 cancelled = UploadNotificationStatusConfig(
                     title = title, message = "Upload cancelled"
@@ -158,11 +165,13 @@ object UploadDownloadUtils {
             delegate = object : RequestObserverDelegate {
                 override fun onProgress(context: Context, uploadInfo: UploadInfo) {
                     // Progress update
+                    Log.i(UploadDownloadUtilsTag, "Progress: $uploadInfo")
                 }
 
                 override fun onSuccess(
                     context: Context, uploadInfo: UploadInfo, serverResponse: ServerResponse
                 ) {
+                    Log.i(UploadDownloadUtilsTag, "Success: $serverResponse")
                     Toast.makeText(context, "File Upload Successful", Toast.LENGTH_SHORT).show()
                     if (deleteFile) {
                         FileUtils.deleteFile(filePath)
@@ -172,16 +181,19 @@ object UploadDownloadUtils {
                 override fun onError(
                     context: Context, uploadInfo: UploadInfo, exception: Throwable
                 ) {
+                    Log.e(UploadDownloadUtilsTag, "Error: $uploadInfo", exception)
                     handleError(context, fileName, uploadInfo, exception, deleteFile, filePath)
                 }
 
                 override fun onCompleted(context: Context, uploadInfo: UploadInfo) {
+                    Log.i(UploadDownloadUtilsTag, "Completed: $uploadInfo")
                     if (deleteFile) {
                         FileUtils.deleteFile(filePath)
                     }
                 }
 
                 override fun onCompletedWhileNotObserving() {
+                    Log.i(UploadDownloadUtilsTag, "Completed while not observing")
                     if (deleteFile) {
                         FileUtils.deleteFile(filePath)
                     }
@@ -236,18 +248,21 @@ object UploadDownloadUtils {
         private val toZipFolder: String,
         private val zipFileName: String,
         private val viewLifecycleOwner: LifecycleOwner,
-        private val sharedPrefManaged: SharedPreferences
+        private val sharedPrefManaged: SharedPreferences,
+        private val fromService: Boolean = false
     ) : AsyncTask<Void, Int, Boolean>() {
 
         private var progressDialog: ProgressDialog? = null
 
         override fun onPreExecute() {
-            progressDialog = ProgressDialog(context)
-            progressDialog!!.setTitle("Zipping")
-            progressDialog!!.setMessage("Please wait...")
-            progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
-            progressDialog!!.setCancelable(false)
-            progressDialog!!.show()
+            if (!fromService) {
+                progressDialog = ProgressDialog(context)
+                progressDialog!!.setTitle("Zipping")
+                progressDialog!!.setMessage("Please wait...")
+                progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
+                progressDialog!!.setCancelable(false)
+                progressDialog!!.show()
+            }
         }
 
         override fun onProgressUpdate(vararg values: Int?) {
@@ -255,11 +270,13 @@ object UploadDownloadUtils {
         }
 
         override fun onPostExecute(result: Boolean?) {
-            progressDialog!!.dismiss()
-            val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)!!
+            if (!fromService) {
+                progressDialog!!.dismiss()
+            }
+            val zipFilePath = GeneralUtils.getInternalStoragePath(context)!!
             if (GeneralUtils.hasActiveInternetConnection(context)) {
                 upload(
-                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
+                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
                 )
             } else {
                 Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
@@ -274,7 +291,7 @@ object UploadDownloadUtils {
                 ZipFile(zipFilePath + zipFileName).addFolder(File(toZipFolder))
                 true
             } catch (ioe: Exception) {
-                Log.d(FileUtilsTag, ioe.toString())
+                Log.e(FileUtilsTag, ioe.toString())
                 false
             } finally {
 
@@ -289,18 +306,21 @@ object UploadDownloadUtils {
         private val zipFileName: String,
         private val viewLifecycleOwner: LifecycleOwner,
         private val sharedPrefManaged: SharedPreferences,
-        private val upload: Boolean
+        private val upload: Boolean,
+        private val fromService: Boolean = false
     ) : AsyncTask<Void, Int, Boolean>() {
 
         private var progressDialog: ProgressDialog? = null
 
         override fun onPreExecute() {
-            progressDialog = ProgressDialog(context)
-            progressDialog!!.setTitle("Zipping")
-            progressDialog!!.setMessage("Please wait...")
-            progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
-            progressDialog!!.setCancelable(false)
-            progressDialog!!.show()
+            if (!fromService) {
+                progressDialog = ProgressDialog(context)
+                progressDialog!!.setTitle("Zipping")
+                progressDialog!!.setMessage("Please wait...")
+                progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
+                progressDialog!!.setCancelable(false)
+                progressDialog!!.show()
+            }
         }
 
         override fun onProgressUpdate(vararg values: Int?) {
@@ -308,11 +328,13 @@ object UploadDownloadUtils {
         }
 
         override fun onPostExecute(result: Boolean?) {
-            progressDialog!!.dismiss()
+            if (!fromService) {
+                progressDialog!!.dismiss()
+            }
             val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
             if (upload and (GeneralUtils.hasActiveInternetConnection(context))) {
                 upload(
-                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true
+                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
                 )
             } else {
                 Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
@@ -337,7 +359,7 @@ object UploadDownloadUtils {
                 }
                 true
             } catch (ioe: Exception) {
-                Log.d(FileUtilsTag, ioe.toString())
+                Log.e(FileUtilsTag, ioe.toString())
                 false
             } finally {
 

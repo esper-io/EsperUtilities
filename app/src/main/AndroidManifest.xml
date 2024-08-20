@@ -449,6 +449,16 @@
 
         <service android:name="com.downloadservice.filedownloadservice.service.DownloadService"/>
 
+        <service
+            android:name="io.esper.android.service.LogCollectionService"
+            android:exported="true"
+            android:foregroundServiceType="dataSync">
+            <intent-filter>
+                <action android:name="io.esper.android.files.ACTION_START_LOG_COLLECTION" />
+            </intent-filter>
+        </service>
+
+
         <meta-data
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions" />

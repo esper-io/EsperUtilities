@@ -27,6 +27,8 @@ object Constants {
     const val DlcFragmentTag = "DlcFragment"
     const val AppStoreFragmentTag = "AppStoreFragment"
     const val NetworkTesterFragmentTag = "NetworkTesterFragment"
+    const val LogCollectionServiceTag = "LogCollectionService"
+    const val GlobalUploadObserverTag = "GlobalUploadObserver"
 
     const val SORT_ASCENDING = "ascending"
 
@@ -63,6 +65,7 @@ object Constants {
     const val SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED = "ftp_allowed"
     const val SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED = "archive_allowed"
     const val SHARED_MANAGED_CONFIG_RENAME_ALLOWED = "rename_allowed"
+    const val SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED = "cut_copy_allowed"
     const val SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS = "show_device_details"
     const val SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY = "esper_app_store_visibility"
     const val SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE = "convert_files_to_app_store"

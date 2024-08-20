@@ -754,9 +754,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun refresh() {
         viewLifecycleOwner.lifecycleScope.launch {
-            context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
             // Perform background operations in IO dispatcher
             withContext(Dispatchers.IO) {
+                context?.let { ManagedConfigUtils.getManagedConfigValues(it) }
                 context?.let { FileUtils.startScreenShotMove(it) }
             }
             // Switch back to the main thread to call viewModel.reload()
@@ -907,7 +907,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             overlayActionMode.setMenuResource(R.menu.file_list_select)
             val menu = overlayActionMode.menu
             val isAnyFileReadOnly = files.any { it.path.fileSystem.isReadOnly }
-            menu.findItem(R.id.action_cut).isVisible = !isAnyFileReadOnly
+            menu.findItem(R.id.action_cut).isVisible =
+                !isAnyFileReadOnly and GeneralUtils.isCutCopyAllowed()
             val areAllFilesArchivePaths = files.all { it.path.isArchivePath }
             menu.findItem(R.id.action_copy).setIcon(
                 if (areAllFilesArchivePaths) {
@@ -921,7 +922,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 } else {
                     R.string.copy
                 }
-            )
+            ).isVisible = GeneralUtils.isCutCopyAllowed()
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
             menu.findItem(R.id.action_delete).isVisible =
                 !isAnyFileReadOnly and GeneralUtils.isDeletionAllowed()
