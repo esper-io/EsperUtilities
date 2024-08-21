@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.text.TextUtils
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,32 +19,24 @@ import com.bumptech.glide.Priority
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import io.esper.android.files.R
-import io.esper.android.files.compat.isSingleLineCompat
 import io.esper.android.files.model.AllContent
-import io.esper.android.files.model.Item
 import io.esper.android.files.ui.AutoGoneTextView
 import io.esper.android.files.ui.DisabledAlphaImageView
 import io.esper.android.files.util.Constants
-import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.UploadDownloadUtils
 import me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
 import java.text.DecimalFormat
 import java.util.Locale
 
-
 class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filterable {
 
-    private var prevCharLength: Int = 0
-    private var mContext: Context? = null
-    private var mItemContentList: MutableList<AllContent>? = ArrayList()
-    private var inflater: LayoutInflater? = null
-    private var mItemContentListFiltered: MutableList<AllContent>? = ArrayList()
-    private var mItemContentListOriginal: MutableList<AllContent>? = ArrayList()
-    private var mItemContentPrevList: MutableList<AllContent>? = ArrayList()
-    private var mItemContentReadyForPrev: MutableList<AllContent>? = ArrayList()
-    private var sharedPrefManaged: SharedPreferences? = null
+    private lateinit var mContext: Context
+    private var mItemContentList: MutableList<AllContent> = mutableListOf()
+    var mItemContentListOriginal: MutableList<AllContent> = mutableListOf()
+    private lateinit var sharedPrefManaged: SharedPreferences
 
+    // Extension to drawable resource map
     private val extensionToDrawableMap = mapOf(
         "apk" to R.drawable.apk,
         "zip" to R.drawable.zip,
@@ -68,38 +59,23 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         "crt" to R.drawable.cert
     )
 
-
-    override fun onCreateViewHolder(
-        parent: ViewGroup, viewType: Int
-    ): MyViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         mContext = parent.context
-        inflater = LayoutInflater.from(mContext)
-        val view: View = inflater!!.inflate(R.layout.content_item, parent, false)
-        mItemContentListOriginal = mItemContentList
-        sharedPrefManaged = mContext!!.getSharedPreferences(
+        sharedPrefManaged = mContext.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
         )
+        val view: View = LayoutInflater.from(mContext).inflate(R.layout.content_item, parent, false)
         return MyViewHolder(view)
     }
 
     @SuppressLint("SetTextI18n")
-    override fun onBindViewHolder(
-        holder: MyViewHolder, position: Int
-    ) {
-        val currentItem = mItemContentList!![position]
-        if (sharedPrefManaged == null) {
-            sharedPrefManaged = mContext!!.getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            )
-        }
+    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        val currentItem = mItemContentList[position]
         showContentElement(currentItem, holder)
     }
 
     private fun showContentElement(currentItem: AllContent, holder: MyViewHolder) {
-        val internalStoragePath = mContext?.let { GeneralUtils.getInternalStoragePath(it) }
-        val newItemsList = internalStoragePath?.let { FileUtils.populateItemList(it) }
-
-        val fileName = currentItem.name?.lowercase() ?: ""
+        val fileName = currentItem.name?.lowercase(Locale.getDefault()) ?: ""
 
         val drawableResource = extensionToDrawableMap.entries.find {
             fileName.endsWith(it.key)
@@ -110,131 +86,78 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         } else {
             if (currentItem.kind?.contains("image", true) == true) {
                 val isGif = currentItem.kind!!.contains(".gif", true)
-                mContext?.let {
-                    loadImage(it, currentItem.download_url.toString(), isGif, holder.imgThumbnail)
-                }
+                loadImage(mContext, currentItem.download_url.toString(), isGif, holder.imgThumbnail)
             } else {
                 holder.imgThumbnail.setImageResource(R.drawable.file)
             }
         }
-        holder.txtInfo.apply {
-            if (isSingleLineCompat) {
-                val nameEllipsize = nameEllipsize
-                ellipsize = nameEllipsize
-                isSelected = nameEllipsize == TextUtils.TruncateAt.MARQUEE
-            }
-        }
-        holder.txtTitle.text = currentItem.name
-        val precision = DecimalFormat("0.00")
-        holder.txtInfo.text = when {
-            currentItem.size!!.toFloat() > 1073741823 -> precision.format(currentItem.size!!.toFloat() / 1073741824.toFloat()) + " GB"
-            currentItem.size!!.toFloat() > 1048575 -> precision.format(currentItem.size!!.toFloat() / 1048576.toFloat()) + " MB"
-            currentItem.size!!.toFloat() > 1023 -> precision.format(currentItem.size!!.toFloat() / 1024.toFloat()) + " KB"
-            else -> currentItem.size!! + " Bytes"
-        } // x Bytes
 
-        holder.downloadBtn.setOnClickListener {}
-        if (newItemsList?.let {
-                containsItemWithSameNameAndSize(
-                    it, currentItem.name!!, currentItem.size!!
-                )
-            } == true) {
-            holder.downloadBtn.isEnabled = false
-            holder.downloadImg.setImageResource(R.drawable.ic_complete)
-        } else {
-            holder.downloadBtn.isEnabled = true
-            holder.downloadImg.setImageResource(R.drawable.ic_cloud_download)
-        }
+        holder.txtTitle.text = currentItem.name
+        holder.txtInfo.text = formatFileSize(currentItem.size!!.toLong())
+
+        // Set download button and image based on conditions (simplified)
         holder.downloadBtn.setOnClickListener {
-            if (GeneralUtils.hasActiveInternetConnection(mContext!!)) {
+            if (GeneralUtils.hasActiveInternetConnection(mContext)) {
                 holder.downloadBtn.isEnabled = false
                 holder.downloadImg.setImageResource(R.drawable.ic_complete)
-                mContext?.let { it1 ->
-                    UploadDownloadUtils.startDownload(
-                        it1, currentItem
-                    )
-                }
+                UploadDownloadUtils.startDownload(mContext, currentItem)
             } else {
-                GeneralUtils.showNoInternetDialog(mContext!!)
+                GeneralUtils.showNoInternetDialog(mContext)
             }
         }
-        GeneralUtils.setFadeAnimation(holder.itemView)
     }
 
-    // Function to check if an item with the same name and size exists in the list
-    private fun containsItemWithSameNameAndSize(
-        itemList: List<Item>, currentItemName: String, currentItemSize: String
-    ): Boolean {
-        val matchingItems = itemList.filter { it.name == currentItemName }
-        for (item in matchingItems) {
-            Log.i(
-                Constants.ContentAdapterTag,
-                "Matching item size: ${item.size}, Current item size: $currentItemSize"
-            )
-            if (item.size == currentItemSize) {
-                return matchingItems.any { it.size.toString() == currentItemSize }
-            }
+    private fun formatFileSize(size: Long): String {
+        val precision = DecimalFormat("0.00")
+        return when {
+            size > 1073741823 -> precision.format(size.toFloat() / 1073741824) + " GB"
+            size > 1048575 -> precision.format(size.toFloat() / 1048576) + " MB"
+            size > 1023 -> precision.format(size.toFloat() / 1024) + " KB"
+            else -> "$size Bytes"
         }
-        return false
     }
 
-
-    override fun getItemCount(): Int {
-        return mItemContentList!!.size
-    }
+    override fun getItemCount(): Int = mItemContentList.size
 
     inner class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var txtTitle: TextView = itemView.findViewById<View>(R.id.txt_item_name) as TextView
-        var txtInfo: AutoGoneTextView =
-            itemView.findViewById<View>(R.id.txt_item_info) as AutoGoneTextView
-        var imgThumbnail: DisabledAlphaImageView =
-            itemView.findViewById<View>(R.id.img_item_thumbnail) as DisabledAlphaImageView
-        var downloadBtn: ForegroundLinearLayout =
-            itemView.findViewById<View>(R.id.downloadBtn) as ForegroundLinearLayout
-        var downloadImg: ImageView = itemView.findViewById<View>(R.id.downloadImg) as ImageView
+        var txtTitle: TextView = itemView.findViewById(R.id.txt_item_name)
+        var txtInfo: AutoGoneTextView = itemView.findViewById(R.id.txt_item_info)
+        var imgThumbnail: DisabledAlphaImageView = itemView.findViewById(R.id.img_item_thumbnail)
+        var downloadBtn: ForegroundLinearLayout = itemView.findViewById(R.id.downloadBtn)
+        var downloadImg: ImageView = itemView.findViewById(R.id.downloadImg)
 
         init {
-            txtTitle.ellipsize = TextUtils.TruncateAt.MARQUEE
-            txtTitle.isSingleLine = true
-            txtTitle.isSelected = true
+            txtTitle.apply {
+                ellipsize = TextUtils.TruncateAt.MARQUEE
+                isSingleLine = true
+                isSelected = true
+            }
         }
     }
 
     override fun getFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSequence: CharSequence): FilterResults {
-                if (charSequence.toString().isEmpty() || charSequence.toString() == "") {
-                    mItemContentList = mItemContentListOriginal!!
-                } else if (charSequence.toString().length < prevCharLength) mItemContentList =
-                    mItemContentPrevList!!
-                val filteredList: MutableList<AllContent> = ArrayList()
-                for (row in mItemContentList!!) {
-                    if (row.name!!.toLowerCase(Locale.getDefault()).contains(
-                            charSequence.toString().toLowerCase(Locale.getDefault())
+                val charString = charSequence.toString()
+                mItemContentList = if (charString.isEmpty()) {
+                    mItemContentListOriginal
+                } else {
+                    val filteredList = mItemContentListOriginal.filter {
+                        it.name!!.toLowerCase(Locale.getDefault()).contains(
+                            charString.toLowerCase(Locale.getDefault())
                         )
-                    ) filteredList.add(row)
+                    }.toMutableList()
+                    filteredList
                 }
-                mItemContentListFiltered = filteredList
 
-                prevCharLength = charSequence.toString().length
-                val filterResults = FilterResults()
-                filterResults.values = mItemContentListFiltered
-                return filterResults
+                return FilterResults().apply { values = mItemContentList }
             }
 
             @SuppressLint("NotifyDataSetChanged")
-            @Suppress("UNCHECKED_CAST")
             override fun publishResults(
-                charSequence: CharSequence?, filterResults: FilterResults
+                charSequence: CharSequence?, filterResults: FilterResults?
             ) {
-                mItemContentPrevList =
-                    if (mItemContentListFiltered!!.size <= mItemContentPrevList!!.size) mItemContentReadyForPrev
-                    else mItemContentListFiltered
-
-                mItemContentReadyForPrev = mItemContentPrevList
-                mItemContentListFiltered = filterResults.values as MutableList<AllContent>?
-                mItemContentList = mItemContentListFiltered!!
-
+                mItemContentList = filterResults?.values as MutableList<AllContent>
                 notifyDataSetChanged()
             }
         }
@@ -242,64 +165,39 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
 
     @SuppressLint("NotifyDataSetChanged")
     fun setContentItems(context: Context, contentItems: MutableList<AllContent>?) {
-        this.mItemContentList = contentItems
-        if (sharedPrefManaged == null) {
-            sharedPrefManaged = context.getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            )
-        }
-        sharedPrefManaged?.getBoolean(Constants.SORT_ASCENDING, true)?.let {
+        this.mItemContentList = contentItems ?: mutableListOf()
+        this.mItemContentListOriginal = ArrayList(this.mItemContentList)
+        sharedPrefManaged = context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        )
+        sharedPrefManaged.getBoolean(Constants.SORT_ASCENDING, true).let {
             sortItems(it)
-        } ?: run { notifyDataSetChanged() }
+        }
     }
 
-    private lateinit var _nameEllipsize: TextUtils.TruncateAt
-    private var nameEllipsize: TextUtils.TruncateAt
-        get() = _nameEllipsize
-        set(value) {
-            _nameEllipsize = value
-            notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
-        }
-
-    //Sorting names ascending
-    private fun sortNames(): Comparator<AllContent> =
-        Comparator { o1, o2 -> o1!!.name!!.compareTo(o2!!.name!!, true) }
-
-    //Sorting names descending
-    private fun sortNamesDesc(): Comparator<AllContent> =
-        Comparator { o1, o2 -> o2!!.name!!.compareTo(o1!!.name!!, true) }
-
     fun sortItems(ascending: Boolean) {
-        if (mItemContentList != null && mItemContentList!!.isNotEmpty()) {
-            val editor = sharedPrefManaged?.edit()
-            editor?.putBoolean(Constants.SORT_ASCENDING, ascending)?.apply()
-            if (ascending) {
-                mItemContentList!!.sortWith(sortNames())
-            } else {
-                mItemContentList!!.sortWith(sortNamesDesc())
-            }
+        if (mItemContentList.isNotEmpty()) {
+            mItemContentList.sortWith(if (ascending) sortNames() else sortNamesDesc())
             notifyDataSetChanged()
         }
     }
 
-    private fun loadImage(
-        context: Context, url: String, isGif: Boolean, imageView: ImageView
-    ) {
+    private fun sortNames(): Comparator<AllContent> =
+        Comparator { o1, o2 -> o1.name!!.compareTo(o2.name!!, true) }
+
+    private fun sortNamesDesc(): Comparator<AllContent> =
+        Comparator { o1, o2 -> o2.name!!.compareTo(o1.name!!, true) }
+
+    private fun loadImage(context: Context, url: String, isGif: Boolean, imageView: ImageView) {
         val requestOptions =
             RequestOptions().timeout(15000).diskCacheStrategy(DiskCacheStrategy.ALL)
                 .placeholder(R.drawable.file).centerCrop().priority(Priority.HIGH)
 
         val glideRequest = Glide.with(context).setDefaultRequestOptions(requestOptions)
-
         if (isGif) {
             glideRequest.asGif().load(url).into(imageView)
         } else {
             glideRequest.load(url).into(imageView)
         }
-    }
-
-
-    companion object {
-        private val PAYLOAD_STATE_CHANGED = Any()
     }
 }

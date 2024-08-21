@@ -1,6 +1,6 @@
 package io.esper.android.network
 
-import io.esper.android.network.model.ResultItem
+import io.esper.android.network.model.UrlAndPortItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class NetworkCheckTask(
     private val adapter: NetworkResultAdapter,
-    private val items: MutableList<ResultItem>,
-    private val itemsToCheck: List<ResultItem>
+    private val items: MutableList<UrlAndPortItem>,
+    private val itemsToCheck: List<UrlAndPortItem>
 ) {
     var job: Job? = null
     private val successCount = AtomicInteger(0)
@@ -49,7 +49,7 @@ class NetworkCheckTask(
                         } else {
                             failureCount.incrementAndGet()
                         }
-                        items.add(ResultItem(item.url, item.port, isAccessible))
+                        items.add(UrlAndPortItem(item.url, item.port, isAccessible))
                         adapter.notifyItemInserted(items.size - 1)
                     }
                 }

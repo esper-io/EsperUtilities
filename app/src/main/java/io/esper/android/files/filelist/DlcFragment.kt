@@ -99,6 +99,7 @@ class DlcFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_refresh -> {
+                mContentAdapter?.filter?.filter("")
                 collapseSearchView()
                 fetchContent(true)
                 true
@@ -111,15 +112,23 @@ class DlcFragment : Fragment() {
 
             R.id.sort_item -> {
                 collapseSearchView()
-                if (sharedPrefManaged?.getBoolean(Constants.SORT_ASCENDING, true) == true) {
-                    Toast.makeText(context, getString(R.string.sort_descending), Toast.LENGTH_SHORT)
-                        .show()
-                    mContentAdapter?.sortItems(false)
+                GeneralUtils.hideKeyboard(requireActivity())
+
+                // Sort the currently displayed list (either filtered or full list)
+                val ascending =
+                    sharedPrefManaged?.getBoolean(Constants.SORT_ASCENDING, true) ?: true
+                mContentAdapter?.sortItems(!ascending)
+
+                // Toggle the sort order and save the preference
+                sharedPrefManaged?.edit()?.putBoolean(Constants.SORT_ASCENDING, !ascending)?.apply()
+
+                val sortMessage = if (!ascending) {
+                    getString(R.string.sort_ascending)
                 } else {
-                    Toast.makeText(context, getString(R.string.sort_ascending), Toast.LENGTH_SHORT)
-                        .show()
-                    mContentAdapter?.sortItems(true)
+                    getString(R.string.sort_descending)
                 }
+                Toast.makeText(context, sortMessage, Toast.LENGTH_SHORT).show()
+
                 true
             }
 
@@ -134,7 +143,11 @@ class DlcFragment : Fragment() {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
 
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                mContentAdapter?.filter?.filter("")
+                context?.let {
+                    mContentAdapter?.setContentItems(
+                        it, mContentAdapter?.mItemContentListOriginal
+                    )
+                }
                 return true
             }
         })
@@ -145,14 +158,20 @@ class DlcFragment : Fragment() {
             }
 
             override fun onQueryTextChange(query: String): Boolean {
-                if (searchView.shouldIgnoreQueryChange) {
-                    return false
+                if (query.isEmpty()) {
+                    context?.let {
+                        mContentAdapter?.setContentItems(
+                            it, mContentAdapter?.mItemContentListOriginal
+                        )
+                    }
+                } else {
+                    mContentAdapter?.filter?.filter(query)
                 }
-                mContentAdapter?.filter?.filter(query)
                 return false
             }
         })
     }
+
 
     private fun collapseSearchView() {
         if (this::menuBinding.isInitialized && menuBinding.searchItem.isActionViewExpanded) {
@@ -198,7 +217,6 @@ class DlcFragment : Fragment() {
                         call: Call<CMItem>, response: Response<CMItem>
                     ) {
                         if (response.isSuccessful) {
-                            contentList.clear()
                             if (response.body() != null) {
                                 response.body()?.results?.let { contentList.addAll(it) }
                                 if (response.body()?.next != null) {
@@ -308,8 +326,7 @@ class DlcFragment : Fragment() {
                     )
                     binding.toolbar.subtitle = "${db.contentDao().getAllContent().size} files"
                     mContentAdapter?.setContentItems(
-                        requireContext(),
-                        db.contentDao().getAllContent()
+                        requireContext(), db.contentDao().getAllContent()
                     )
                 } else {
                     Log.d(DlcFragmentTag, "$methodDlcFragmentTag: Specific Content Allowed")

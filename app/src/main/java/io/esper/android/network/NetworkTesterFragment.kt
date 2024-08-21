@@ -19,12 +19,12 @@ import io.esper.android.files.R
 import io.esper.android.files.databinding.NetworkTesterFragmentBinding
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.GeneralUtils
-import io.esper.android.network.model.ResultItem
+import io.esper.android.network.model.UrlAndPortItem
 import kotlinx.coroutines.launch
 
 class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
     private lateinit var networkResultAdapter: NetworkResultAdapter
-    private val resultItems = mutableListOf<ResultItem>()
+    private val urlAndPortItems = mutableListOf<UrlAndPortItem>()
     private lateinit var menuBinding: MenuBinding
     private lateinit var binding: NetworkTesterFragmentBinding
     private lateinit var progressBar: ProgressBar
@@ -55,7 +55,7 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
     }
 
     private fun init(view: View) {
-        networkResultAdapter = NetworkResultAdapter(resultItems)
+        networkResultAdapter = NetworkResultAdapter(urlAndPortItems)
         binding.recyclerViewResults.layoutManager = LinearLayoutManager(context)
         binding.recyclerViewResults.adapter = networkResultAdapter
 
@@ -128,7 +128,7 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
     }
 
     private fun refreshData() {
-        resultItems.clear()
+        urlAndPortItems.clear()
         networkResultAdapter.notifyDataSetChanged()
 
         progressBar.visibility = View.VISIBLE
@@ -137,50 +137,50 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
 
         val itemsToCheck = listOf(
             if (GeneralUtils.isStreamerAvailable(requireContext())) {
-                ResultItem("streamer.esper.io", 443, false)
+                UrlAndPortItem("streamer.esper.io", 443, false)
             } else {
-                ResultItem("firebasecrashlyticssymbols.googleapis.com", 443, false)
+                UrlAndPortItem("firebasecrashlyticssymbols.googleapis.com", 443, false)
             },
             if (!GeneralUtils.getBaseStackName(requireContext()).isNullOrEmpty()) {
-                ResultItem(
+                UrlAndPortItem(
                     "scapi-${GeneralUtils.getBaseStackName(requireContext())}-static-and-media-files.s3.amazonaws.com",
                     443,
                     false
                 )
             } else {
-                ResultItem("firebaseinstallations.googleapis.com", 443, false)
+                UrlAndPortItem("firebaseinstallations.googleapis.com", 443, false)
             },
-            ResultItem("remoteviewer.esper.cloud", 3478, false),
-            ResultItem("services.shoonyacloud.com", 443, false),
-            ResultItem("mqtt.shoonyacloud.com", 1883, false),
-            ResultItem("turn.shoonyacloud.com", 3478, false),
-            ResultItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
-            ResultItem("downloads.esper.cloud", 443, false),
-            ResultItem("dpcdownloads.esper.cloud", 443, false),
-            ResultItem("eea-services.esper.cloud", 443, false),
-            ResultItem(
+            UrlAndPortItem("remoteviewer.esper.cloud", 3478, false),
+            UrlAndPortItem("services.shoonyacloud.com", 443, false),
+            UrlAndPortItem("mqtt.shoonyacloud.com", 1883, false),
+            UrlAndPortItem("turn.shoonyacloud.com", 3478, false),
+            UrlAndPortItem("mqtt-telemetry-prod.esper.cloud", 1883, false),
+            UrlAndPortItem("downloads.esper.cloud", 443, false),
+            UrlAndPortItem("dpcdownloads.esper.cloud", 443, false),
+            UrlAndPortItem("eea-services.esper.cloud", 443, false),
+            UrlAndPortItem(
                 "${GeneralUtils.getTenantForNetworkTester(requireContext())}-api.esper.cloud",
                 443,
                 false
             ),
-            ResultItem("authn2.esper.cloud", 443, false),
-            ResultItem("id.esper.cloud", 443, false),
-            ResultItem("ping.esper.cloud", 443, false),
-            ResultItem("mqtt.esper.cloud", 443, false),
-            ResultItem("statserv.esper.cloud", 443, false),
-            ResultItem("id.esper.cloud", 443, false),
-            ResultItem("onboarding.esper.cloud", 443, false),
-            ResultItem("ota.esper.cloud", 443, false),
-            ResultItem("eea-services.esper.cloud", 443, false),
-            ResultItem("ota.esper.io", 443, false),
-            ResultItem("shoonya-firebase.firebaseio.com", 443, false),
-            ResultItem("crashlyticsreports-pa.googleapis.com", 443, false),
-            ResultItem("8.8.8.8", 443, false),
-            ResultItem("ip-api.com", 80, false)
+            UrlAndPortItem("authn2.esper.cloud", 443, false),
+            UrlAndPortItem("id.esper.cloud", 443, false),
+            UrlAndPortItem("ping.esper.cloud", 443, false),
+            UrlAndPortItem("mqtt.esper.cloud", 443, false),
+            UrlAndPortItem("statserv.esper.cloud", 443, false),
+            UrlAndPortItem("id.esper.cloud", 443, false),
+            UrlAndPortItem("onboarding.esper.cloud", 443, false),
+            UrlAndPortItem("ota.esper.cloud", 443, false),
+            UrlAndPortItem("eea-services.esper.cloud", 443, false),
+            UrlAndPortItem("ota.esper.io", 443, false),
+            UrlAndPortItem("shoonya-firebase.firebaseio.com", 443, false),
+            UrlAndPortItem("crashlyticsreports-pa.googleapis.com", 443, false),
+            UrlAndPortItem("8.8.8.8", 443, false),
+            UrlAndPortItem("ip-api.com", 80, false)
         )
 
         networkCheckTask?.cancel()
-        networkCheckTask = NetworkCheckTask(networkResultAdapter, resultItems, itemsToCheck)
+        networkCheckTask = NetworkCheckTask(networkResultAdapter, urlAndPortItems, itemsToCheck)
         networkCheckTask?.start()
 
         // Hide progress bar when all tasks are done

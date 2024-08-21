@@ -7,9 +7,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.esper.android.files.R
-import io.esper.android.network.model.ResultItem
+import io.esper.android.network.model.UrlAndPortItem
 
-class NetworkResultAdapter(private val resultItems: List<ResultItem>) :
+class NetworkResultAdapter(private val urlAndPortItems: List<UrlAndPortItem>) :
     RecyclerView.Adapter<NetworkResultAdapter.ResultViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
@@ -19,11 +19,11 @@ class NetworkResultAdapter(private val resultItems: List<ResultItem>) :
     }
 
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
-        val resultItem = resultItems[position]
+        val resultItem = urlAndPortItems[position]
         holder.bind(resultItem)
     }
 
-    override fun getItemCount(): Int = resultItems.size
+    override fun getItemCount(): Int = urlAndPortItems.size
 
     fun scrollToLastPosition(recyclerView: RecyclerView) {
         recyclerView.scrollToPosition(itemCount - 1)
@@ -33,11 +33,11 @@ class NetworkResultAdapter(private val resultItems: List<ResultItem>) :
         private val textViewUrl: TextView = itemView.findViewById(R.id.textViewUrl)
         private val imageViewStatus: ImageView = itemView.findViewById(R.id.imageViewStatus)
 
-        fun bind(resultItem: ResultItem) {
-            textViewUrl.text = "${resultItem.url}:${resultItem.port}"
+        fun bind(urlAndPortItem: UrlAndPortItem) {
+            textViewUrl.text = "${urlAndPortItem.url}:${urlAndPortItem.port}"
             textViewUrl.isSelected = true
 
-            if (resultItem.isAccessible) {
+            if (urlAndPortItem.isAccessible) {
                 imageViewStatus.setImageResource(R.drawable.success_icon)
                 imageViewStatus.visibility = View.VISIBLE
             } else {
