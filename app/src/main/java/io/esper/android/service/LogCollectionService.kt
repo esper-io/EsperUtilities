@@ -113,7 +113,7 @@ class LogCollectionService : LifecycleService() {
                 Log.i(Constants.LogCollectionServiceTag, "Compressing directory: $logPath")
                 FileUtils.CompressTask(
                     context = this,
-                    pathsToZip = listOf(logPath), // Pass the single folder path as a list
+                    pathsToZip = listOf(logPath), // Pass the single file/folder path as a list
                     zipFileName = zipFileName,
                     viewLifecycleOwner = this,
                     upload = true,
