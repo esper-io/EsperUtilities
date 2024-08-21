@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.util.Log
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -234,12 +235,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         navigationFragment.listener = this
         val activity = requireActivity() as AppCompatActivity
         val appName = sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_APP_NAME, null)
+        Log.i(Constants.FileListFragmentTag, "onActivityCreated: appName: $appName")
         if (appName == null) {
             activity.setTitle(R.string.file_list_title)
         } else {
             activity.title = appName
         }
-        activity.setTitle(R.string.file_list_title)
         activity.setSupportActionBar(binding.toolbar)
         overlayActionMode = OverlayToolbarActionMode(binding.overlayToolbar)
         bottomActionMode = PersistentBarLayoutToolbarActionMode(
@@ -1481,12 +1482,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             )?.getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false) == true
         ) {
             val path = currentPath
-            UploadDownloadUtils.Compress(
-                context,
-                path.toString(),
-                GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip",
-                this,
-                sharedPrefManaged
+            val zipFileName = GeneralUtils.getDeviceName(context) + "-${GeneralUtils.getCurrentDateTime()}.zip"
+            FileUtils.CompressTask(
+                context = context,
+                pathsToZip = listOf(path.toString()), // Pass the single file path as a list with one element
+                zipFileName = zipFileName,
+                viewLifecycleOwner = viewLifecycleOwner,
+                fromService = false
             ).execute()
         } else {
             showToast(R.string.upload_disabled)
@@ -1506,20 +1508,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 filePathsToZip.add(fileItem.path.toString())
             }
             // Pass filePathsToZip to CompressMultipleFiles method
-            UploadDownloadUtils.CompressMultipleFiles(
-                requireContext(),
-                filePathsToZip,
-                GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}.zip",
-                requireActivity(),
-                sharedPrefManaged,
-                true
+            val zipFileName = GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}.zip"
+            FileUtils.CompressTask(
+                context = requireContext(),
+                pathsToZip = filePathsToZip, // Pass the list of file/folder paths
+                zipFileName = zipFileName,
+                viewLifecycleOwner = viewLifecycleOwner,
+                fromService = false
             ).execute()
         } else {
             showToast(R.string.upload_disabled)
             return
         }
     }
-
 
     private fun upload(path: Path, name: String) {
         if (context?.getSharedPreferences(
@@ -1530,7 +1531,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 showToast(R.string.upload_directory_fail)
                 return
             }
-            UploadDownloadUtils.upload(
+            UploadDownloadUtils.uploadFile(
                 path.toString(),
                 GeneralUtils.getDeviceName(requireContext()) + "-${GeneralUtils.getCurrentDateTime()}-$name",
                 requireContext(),

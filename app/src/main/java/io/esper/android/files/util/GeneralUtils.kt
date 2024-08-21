@@ -253,26 +253,22 @@ object GeneralUtils {
     }
 
     fun getInternalStoragePath(context: Context): String? {
-        return getInternalStoragePath(
-            context.getSharedPreferences(
-                Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-            )
-        )
-    }
-
-    fun getInternalStoragePath(sharedPrefManaged: SharedPreferences): String? {
-        return sharedPrefManaged.getString(
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(
             Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, Constants.InternalRootFolder
         )
     }
 
-    fun setInternalStoragePath(sharedPrefManaged: SharedPreferences, path: String) {
-        sharedPrefManaged.edit().putString(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, path)
-            .apply()
+    fun setInternalStoragePath(context: Context, path: String) {
+        context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
+            .edit().putString(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, path).apply()
     }
 
-    fun removeInternalStoragePath(sharedPrefManaged: SharedPreferences) {
-        sharedPrefManaged.edit().remove(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH).apply()
+    fun removeInternalStoragePath(context: Context) {
+        context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
+            .edit().remove(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH).apply()
+
     }
 
     fun initNetworkConfigs() {

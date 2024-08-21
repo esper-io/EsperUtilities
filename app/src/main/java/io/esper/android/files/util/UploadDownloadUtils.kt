@@ -1,19 +1,12 @@
-@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-
 package io.esper.android.files.util
 
-import android.R
-import android.annotation.SuppressLint
-import android.app.ProgressDialog
 import android.content.Context
-import android.content.SharedPreferences
-import android.os.AsyncTask
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
 import com.downloadservice.filedownloadservice.manager.FileDownloadManager
+import io.esper.android.files.R
 import io.esper.android.files.model.AllContent
-import io.esper.android.files.util.Constants.FileUtilsTag
 import io.esper.android.files.util.Constants.UploadDownloadUtilsTag
 import net.gotev.uploadservice.UploadServiceConfig.defaultNotificationChannel
 import net.gotev.uploadservice.data.UploadInfo
@@ -27,7 +20,6 @@ import net.gotev.uploadservice.network.ServerResponse
 import net.gotev.uploadservice.observer.request.RequestObserverDelegate
 import net.gotev.uploadservice.placeholders.Placeholder
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest
-import net.lingala.zip4j.ZipFile
 import java.io.File
 import java.util.UUID
 
@@ -36,11 +28,7 @@ object UploadDownloadUtils {
     fun startDownload(
         mContext: Context, currentItem: AllContent
     ) {
-        val sharedPrefManaged = mContext.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES,
-            Context.MODE_PRIVATE
-        )
-        GeneralUtils.getInternalStoragePath(sharedPrefManaged)?.let { internalStoragePath ->
+        GeneralUtils.getInternalStoragePath(mContext)?.let { internalStoragePath ->
             val downloadFileName = currentItem.name.toString()
             val targetFile = File(internalStoragePath, downloadFileName)
             if (targetFile.exists()) {
@@ -97,8 +85,7 @@ object UploadDownloadUtils {
         return newName
     }
 
-    @Suppress("NAME_SHADOWING")
-    fun upload(
+    fun uploadFile(
         filePath: String,
         fileName: String,
         context: Context,
@@ -108,8 +95,13 @@ object UploadDownloadUtils {
     ) {
         if (GeneralUtils.getDeviceName(
                 context
-            ) == null) {
-            Toast.makeText(context, "Info not available for upload, please set it in the managed config.", Toast.LENGTH_SHORT).show()
+            ) == null
+        ) {
+            Toast.makeText(
+                context,
+                "Info not available for upload, please set it in the managed config.",
+                Toast.LENGTH_SHORT
+            ).show()
             if (deleteFile) {
                 FileUtils.deleteFile(filePath)
             }
@@ -133,72 +125,73 @@ object UploadDownloadUtils {
         }
         MultipartUploadRequest(context, url).addFileToUpload(
             filePath = filePath, parameterName = "key"
-        ).setBearerAuth(apiKey!!).setMaxRetries(3).setUploadID(uploadId).setNotificationConfig { context, uploadId ->
-            val title = "Esper File Upload (${fileName})"
-            UploadNotificationConfig(
-                notificationChannelId = defaultNotificationChannel!!,
-                isRingToneEnabled = true,
-                progress = UploadNotificationStatusConfig(
-                    title = title,
-                    message = "Uploading at ${Placeholder.UploadRate} (${Placeholder.Progress})",
-                    actions = arrayListOf(
-                        UploadNotificationAction(
-                            icon = R.drawable.ic_menu_close_clear_cancel,
-                            title = "Cancel",
-                            intent = context.getCancelUploadIntent(uploadId)
+        ).setBearerAuth(apiKey!!).setMaxRetries(3).setUploadID(uploadId)
+            .setNotificationConfig { _, uploadIdForIntent ->
+                val title = "Esper File Upload (${fileName})"
+                UploadNotificationConfig(
+                    notificationChannelId = defaultNotificationChannel!!,
+                    isRingToneEnabled = true,
+                    progress = UploadNotificationStatusConfig(
+                        title = title,
+                        message = "Uploading at ${Placeholder.UploadRate} (${Placeholder.Progress})",
+                        actions = arrayListOf(
+                            UploadNotificationAction(
+                                icon = R.drawable.close_icon_white_24dp,
+                                title = "Cancel",
+                                intent = context.getCancelUploadIntent(uploadIdForIntent)
+                            )
                         )
+                    ),
+                    success = UploadNotificationStatusConfig(
+                        title = title,
+                        message = "Upload completed successfully in ${Placeholder.ElapsedTime}"
+                    ),
+                    error = UploadNotificationStatusConfig(
+                        title = title, message = "Error during upload, retry later."
+                    ),
+                    cancelled = UploadNotificationStatusConfig(
+                        title = title, message = "Upload cancelled"
                     )
-                ),
-                success = UploadNotificationStatusConfig(
-                    title = title,
-                    message = "Upload completed successfully in ${Placeholder.ElapsedTime}"
-                ),
-                error = UploadNotificationStatusConfig(
-                    title = title, message = "Error during upload, retry later."
-                ),
-                cancelled = UploadNotificationStatusConfig(
-                    title = title, message = "Upload cancelled"
                 )
-            )
-        }.subscribe(context = context,
-            lifecycleOwner = lifecycleOwner,
-            delegate = object : RequestObserverDelegate {
-                override fun onProgress(context: Context, uploadInfo: UploadInfo) {
-                    // Progress update
-                    Log.i(UploadDownloadUtilsTag, "Progress: $uploadInfo")
-                }
-
-                override fun onSuccess(
-                    context: Context, uploadInfo: UploadInfo, serverResponse: ServerResponse
-                ) {
-                    Log.i(UploadDownloadUtilsTag, "Success: $serverResponse")
-                    Toast.makeText(context, "File Upload Successful", Toast.LENGTH_SHORT).show()
-                    if (deleteFile) {
-                        FileUtils.deleteFile(filePath)
+            }.subscribe(context = context,
+                lifecycleOwner = lifecycleOwner,
+                delegate = object : RequestObserverDelegate {
+                    override fun onProgress(context: Context, uploadInfo: UploadInfo) {
+                        // Progress update
+                        Log.i(UploadDownloadUtilsTag, "Progress: $uploadInfo")
                     }
-                }
 
-                override fun onError(
-                    context: Context, uploadInfo: UploadInfo, exception: Throwable
-                ) {
-                    Log.e(UploadDownloadUtilsTag, "Error: $uploadInfo", exception)
-                    handleError(context, fileName, uploadInfo, exception, deleteFile, filePath)
-                }
-
-                override fun onCompleted(context: Context, uploadInfo: UploadInfo) {
-                    Log.i(UploadDownloadUtilsTag, "Completed: $uploadInfo")
-                    if (deleteFile) {
-                        FileUtils.deleteFile(filePath)
+                    override fun onSuccess(
+                        context: Context, uploadInfo: UploadInfo, serverResponse: ServerResponse
+                    ) {
+                        Log.i(UploadDownloadUtilsTag, "Success: $serverResponse")
+                        Toast.makeText(context, "File Upload Successful", Toast.LENGTH_SHORT).show()
+                        if (deleteFile) {
+                            FileUtils.deleteFile(filePath)
+                        }
                     }
-                }
 
-                override fun onCompletedWhileNotObserving() {
-                    Log.i(UploadDownloadUtilsTag, "Completed while not observing")
-                    if (deleteFile) {
-                        FileUtils.deleteFile(filePath)
+                    override fun onError(
+                        context: Context, uploadInfo: UploadInfo, exception: Throwable
+                    ) {
+                        Log.e(UploadDownloadUtilsTag, "Error: $uploadInfo", exception)
+                        handleError(context, fileName, uploadInfo, exception, deleteFile, filePath)
                     }
-                }
-            })
+
+                    override fun onCompleted(context: Context, uploadInfo: UploadInfo) {
+                        Log.i(UploadDownloadUtilsTag, "Completed: $uploadInfo")
+                        if (deleteFile) {
+                            FileUtils.deleteFile(filePath)
+                        }
+                    }
+
+                    override fun onCompletedWhileNotObserving() {
+                        Log.i(UploadDownloadUtilsTag, "Completed while not observing")
+                        if (deleteFile) {
+                            FileUtils.deleteFile(filePath)
+                        }
+                    }
+                })
     }
 
     private fun handleError(
@@ -239,131 +232,6 @@ object UploadDownloadUtils {
         }
         if (deleteFile) {
             FileUtils.deleteFile(filePath)
-        }
-    }
-
-    @SuppressLint("StaticFieldLeak")
-    class Compress(
-        private val context: Context,
-        private val toZipFolder: String,
-        private val zipFileName: String,
-        private val viewLifecycleOwner: LifecycleOwner,
-        private val sharedPrefManaged: SharedPreferences,
-        private val fromService: Boolean = false
-    ) : AsyncTask<Void, Int, Boolean>() {
-
-        private var progressDialog: ProgressDialog? = null
-
-        override fun onPreExecute() {
-            if (!fromService) {
-                progressDialog = ProgressDialog(context)
-                progressDialog!!.setTitle("Zipping")
-                progressDialog!!.setMessage("Please wait...")
-                progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
-                progressDialog!!.setCancelable(false)
-                progressDialog!!.show()
-            }
-        }
-
-        override fun onProgressUpdate(vararg values: Int?) {
-            // Progress update
-        }
-
-        override fun onPostExecute(result: Boolean?) {
-            if (!fromService) {
-                progressDialog!!.dismiss()
-            }
-            val zipFilePath = GeneralUtils.getInternalStoragePath(context)!!
-            if (GeneralUtils.hasActiveInternetConnection(context)) {
-                upload(
-                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
-                )
-            } else {
-                Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
-                    .show()
-                FileUtils.deleteFile(zipFilePath + zipFileName)
-            }
-        }
-
-        override fun doInBackground(vararg p0: Void?): Boolean {
-            return try {
-                val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)!!
-                ZipFile(zipFilePath + zipFileName).addFolder(File(toZipFolder))
-                true
-            } catch (ioe: Exception) {
-                Log.e(FileUtilsTag, ioe.toString())
-                false
-            } finally {
-
-            }
-        }
-    }
-
-    @SuppressLint("StaticFieldLeak")
-    class CompressMultipleFiles(
-        private val context: Context,
-        private val filePathsToZip: ArrayList<String>,
-        private val zipFileName: String,
-        private val viewLifecycleOwner: LifecycleOwner,
-        private val sharedPrefManaged: SharedPreferences,
-        private val upload: Boolean,
-        private val fromService: Boolean = false
-    ) : AsyncTask<Void, Int, Boolean>() {
-
-        private var progressDialog: ProgressDialog? = null
-
-        override fun onPreExecute() {
-            if (!fromService) {
-                progressDialog = ProgressDialog(context)
-                progressDialog!!.setTitle("Zipping")
-                progressDialog!!.setMessage("Please wait...")
-                progressDialog!!.setProgressStyle(ProgressDialog.STYLE_SPINNER)
-                progressDialog!!.setCancelable(false)
-                progressDialog!!.show()
-            }
-        }
-
-        override fun onProgressUpdate(vararg values: Int?) {
-            // Progress update
-        }
-
-        override fun onPostExecute(result: Boolean?) {
-            if (!fromService) {
-                progressDialog!!.dismiss()
-            }
-            val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
-            if (upload and (GeneralUtils.hasActiveInternetConnection(context))) {
-                upload(
-                    zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
-                )
-            } else {
-                Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
-                    .show()
-                FileUtils.deleteFile(zipFilePath + zipFileName)
-            }
-        }
-
-        override fun doInBackground(vararg p0: Void?): Boolean {
-            return try {
-                val zipFilePath = GeneralUtils.getInternalStoragePath(sharedPrefManaged)
-                for (i in filePathsToZip.indices) {
-                    try {
-                        if (File(filePathsToZip[i]).isDirectory) {
-                            ZipFile(zipFilePath + zipFileName).addFolder(File(filePathsToZip[i]))
-                        } else {
-                            ZipFile(zipFilePath + zipFileName).addFile(File(filePathsToZip[i]))
-                        }
-                    } catch (e: Exception) {
-                        Log.e(FileUtilsTag, e.message.toString())
-                    }
-                }
-                true
-            } catch (ioe: Exception) {
-                Log.e(FileUtilsTag, ioe.toString())
-                false
-            } finally {
-
-            }
         }
     }
 }

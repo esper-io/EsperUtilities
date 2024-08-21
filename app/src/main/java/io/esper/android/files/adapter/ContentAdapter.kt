@@ -73,8 +73,8 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
     }
 
     private fun showContentElement(currentItem: AllContent, holder: MyViewHolder) {
-        val newItemsList = GeneralUtils.getInternalStoragePath(sharedPrefManaged!!)
-            ?.let { FileUtils.populateItemList(it) }
+        val internalStoragePath = mContext?.let { GeneralUtils.getInternalStoragePath(it) }
+        val newItemsList = internalStoragePath?.let { FileUtils.populateItemList(it) }
         when {
             currentItem.name!!.endsWith(
                 ".apk", ignoreCase = true

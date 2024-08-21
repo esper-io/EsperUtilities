@@ -135,8 +135,7 @@ object ManagedConfigUtils {
     ) {
 
         val appNameChange = appNameManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val internalRootPathChange =
-            internalRootPathManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val internalRootPathChange = internalRootPathManagedConfig(context, appRestrictions)
         val externalRootPathChange =
             externalRootPathManagedConfig(context, appRestrictions, sharedPrefManaged)
         val showScreenshotsFolderChange =
@@ -238,21 +237,20 @@ object ManagedConfigUtils {
     }
 
     private fun internalRootPathManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+        context: Context, appRestrictions: Bundle
     ): Boolean {
         var result = false
         val internalRootPath =
             if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH)) appRestrictions.getString(
                 Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH
             ).toString() else Constants.InternalRootFolder
-        val changeInValue =
-            internalRootPath != GeneralUtils.getInternalStoragePath(sharedPrefManaged)
+        val changeInValue = internalRootPath != GeneralUtils.getInternalStoragePath(context)
         if (changeInValue && internalRootPath.isEmpty()) {
-            GeneralUtils.removeInternalStoragePath(sharedPrefManaged)
+            GeneralUtils.removeInternalStoragePath(context)
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Internal Root Path Removed")
         } else if (changeInValue) {
-            GeneralUtils.setInternalStoragePath(sharedPrefManaged, internalRootPath)
+            GeneralUtils.setInternalStoragePath(context, internalRootPath)
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Internal Root Path Changed: $internalRootPath")
         }
@@ -378,7 +376,8 @@ object ManagedConfigUtils {
         )
         if (changeInValue) {
             sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, cutCopyAllowed).apply()
+                .putBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, cutCopyAllowed)
+                .apply()
             result = true
             Log.i(Constants.ManagedConfigUtilsTag, "Cut Copy Allowed Changed")
         }

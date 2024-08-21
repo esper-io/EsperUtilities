@@ -1,13 +1,16 @@
 package io.esper.android.files.util
 
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.AsyncTask
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.lifecycle.LifecycleOwner
 import com.topjohnwu.superuser.internal.UiThreadHandler
 import io.esper.android.files.app.application
 import io.esper.android.files.file.FileItem
@@ -16,7 +19,10 @@ import io.esper.android.files.filejob.FileJobService
 import io.esper.android.files.model.Item
 import io.esper.android.files.provider.archive.isArchivePath
 import io.esper.android.files.provider.linux.isLinuxPath
+import io.esper.android.files.util.Constants.FileUtilsTag
+import io.esper.android.files.util.UploadDownloadUtils.uploadFile
 import io.esper.devicesdk.EsperDeviceSDK
+import net.lingala.zip4j.ZipFile
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -302,4 +308,71 @@ object FileUtils {
             return false
         }
     }
+
+    class CompressTask(
+        private val context: Context,
+        private val pathsToZip: List<String>,
+        private val zipFileName: String,
+        private val viewLifecycleOwner: LifecycleOwner,
+        private val upload: Boolean = true,
+        private val fromService: Boolean = false
+    ) : AsyncTask<Void, Int, Boolean>() {
+
+        private var progressDialog: ProgressDialog? = null
+
+        override fun onPreExecute() {
+            if (!fromService) {
+                progressDialog = ProgressDialog(context).apply {
+                    setTitle("Zipping")
+                    setMessage("Please wait...")
+                    setProgressStyle(ProgressDialog.STYLE_SPINNER)
+                    setCancelable(false)
+                    show()
+                }
+            }
+        }
+
+        override fun onProgressUpdate(vararg values: Int?) {
+            // Progress update logic, if needed
+        }
+
+        override fun onPostExecute(result: Boolean?) {
+            progressDialog?.dismiss()
+
+            val zipFilePath = GeneralUtils.getInternalStoragePath(context)
+            if (result == true && zipFilePath != null) {
+                if (upload && GeneralUtils.hasActiveInternetConnection(context)) {
+                    uploadFile(
+                        zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
+                    )
+                } else {
+                    Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT).show()
+                    deleteFile(zipFilePath + zipFileName)
+                }
+            } else {
+                Toast.makeText(context, "Compression failed!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun doInBackground(vararg p0: Void?): Boolean {
+            return try {
+                val zipFilePath = GeneralUtils.getInternalStoragePath(context) ?: return false
+                val zipFile = ZipFile(zipFilePath + zipFileName)
+
+                for (path in pathsToZip) {
+                    val file = File(path)
+                    if (file.isDirectory) {
+                        zipFile.addFolder(file)
+                    } else {
+                        zipFile.addFile(file)
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                Log.e(FileUtilsTag, e.toString())
+                false
+            }
+        }
+    }
+
 }

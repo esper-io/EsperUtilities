@@ -14,8 +14,8 @@ import androidx.lifecycle.LifecycleService
 import io.esper.android.files.R
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.util.Constants
+import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
-import io.esper.android.files.util.UploadDownloadUtils
 import net.gotev.uploadservice.observer.request.GlobalRequestObserver
 import java.io.File
 
@@ -111,14 +111,12 @@ class LogCollectionService : LifecycleService() {
             logFile.isDirectory && logFile.listFiles()?.isNotEmpty() == true -> {
                 // Directory is not empty, compress it
                 Log.i(Constants.LogCollectionServiceTag, "Compressing directory: $logPath")
-                UploadDownloadUtils.Compress(
+                FileUtils.CompressTask(
                     context = this,
-                    toZipFolder = logPath,
+                    pathsToZip = listOf(logPath), // Pass the single folder path as a list
                     zipFileName = zipFileName,
                     viewLifecycleOwner = this,
-                    sharedPrefManaged = getSharedPreferences(
-                        Constants.SHARED_MANAGED_CONFIG_VALUES, MODE_PRIVATE
-                    ),
+                    upload = true,
                     fromService = true
                 ).execute()
             }
@@ -128,14 +126,11 @@ class LogCollectionService : LifecycleService() {
                 Log.i(Constants.LogCollectionServiceTag, "Compressing file: $logPath")
                 val filePathsToZip: ArrayList<String> = ArrayList()
                 filePathsToZip.add(logPath)
-                UploadDownloadUtils.CompressMultipleFiles(
+                FileUtils.CompressTask(
                     context = this,
-                    filePathsToZip = filePathsToZip,
+                    pathsToZip = filePathsToZip, // Pass the list of file/folder paths
                     zipFileName = zipFileName,
                     viewLifecycleOwner = this,
-                    sharedPrefManaged = getSharedPreferences(
-                        Constants.SHARED_MANAGED_CONFIG_VALUES, MODE_PRIVATE
-                    ),
                     upload = true,
                     fromService = true
                 ).execute()

@@ -51,7 +51,7 @@ class AboutFragment : Fragment() {
             Log.i("AboutFragment", "DPC logs Available")
             if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
                 Toast.makeText(requireContext(), "Uploading DPC logs...", Toast.LENGTH_SHORT).show()
-                UploadDownloadUtils.upload(
+                UploadDownloadUtils.uploadFile(
                     dpcLogFile.path, dpcLogFile.name, requireContext(), viewLifecycleOwner, true
                 )
             } else {
