@@ -29,6 +29,7 @@ object Constants {
     const val NetworkTesterFragmentTag = "NetworkTesterFragment"
     const val LogCollectionServiceTag = "LogCollectionService"
     const val GlobalUploadObserverTag = "GlobalUploadObserver"
+    const val ContentAdapterTag = "ContentAdapter"
 
     const val SORT_ASCENDING = "ascending"
 

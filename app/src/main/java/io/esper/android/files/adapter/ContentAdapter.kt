@@ -46,6 +46,29 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
     private var mItemContentReadyForPrev: MutableList<AllContent>? = ArrayList()
     private var sharedPrefManaged: SharedPreferences? = null
 
+    private val extensionToDrawableMap = mapOf(
+        "apk" to R.drawable.apk,
+        "zip" to R.drawable.zip,
+        "rar" to R.drawable.zip,
+        "pdf" to R.drawable.pdf,
+        "xls" to R.drawable.xls,
+        "xlsx" to R.drawable.xls,
+        "ppt" to R.drawable.ppt,
+        "pptx" to R.drawable.ppt,
+        "doc" to R.drawable.doc,
+        "docx" to R.drawable.doc,
+        "csv" to R.drawable.csv,
+        "vcf" to R.drawable.vcf,
+        "json" to R.drawable.json,
+        "txt" to R.drawable.txt,
+        "html" to R.drawable.html,
+        "mp3" to R.drawable.mp3,
+        "xml" to R.drawable.xml,
+        "pem" to R.drawable.cert,
+        "crt" to R.drawable.cert
+    )
+
+
     override fun onCreateViewHolder(
         parent: ViewGroup, viewType: Int
     ): MyViewHolder {
@@ -75,87 +98,23 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
     private fun showContentElement(currentItem: AllContent, holder: MyViewHolder) {
         val internalStoragePath = mContext?.let { GeneralUtils.getInternalStoragePath(it) }
         val newItemsList = internalStoragePath?.let { FileUtils.populateItemList(it) }
-        when {
-            currentItem.name!!.endsWith(
-                ".apk", ignoreCase = true
-            ) -> {
-                holder.imgThumbnail.setImageResource(R.drawable.apk)
-            }
 
-            currentItem.name!!.endsWith(".zip", ignoreCase = true) || currentItem.name!!.endsWith(
-                ".rar", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.zip)
+        val fileName = currentItem.name?.lowercase() ?: ""
 
-            currentItem.name!!.endsWith(
-                ".pdf", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.pdf)
+        val drawableResource = extensionToDrawableMap.entries.find {
+            fileName.endsWith(it.key)
+        }?.value
 
-            currentItem.name!!.endsWith(".xls", ignoreCase = true) || currentItem.name!!.endsWith(
-                ".xlsx", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.xls)
-
-            currentItem.name!!.endsWith(".ppt", ignoreCase = true) || currentItem.name!!.endsWith(
-                ".pptx", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.ppt)
-
-            currentItem.name!!.endsWith(".doc", ignoreCase = true) || currentItem.name!!.endsWith(
-                ".docx", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.doc)
-
-            currentItem.name!!.endsWith(
-                ".csv", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.csv)
-
-            currentItem.name!!.endsWith(
-                ".vcf", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.vcf)
-
-            currentItem.name!!.endsWith(
-                ".json", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.json)
-
-            currentItem.name!!.endsWith(
-                ".txt", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.txt)
-
-            currentItem.name!!.endsWith(
-                ".html", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.html)
-
-            currentItem.name!!.endsWith(
-                ".mp3", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.mp3)
-
-            currentItem.name!!.endsWith(
-                ".xml", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.xml)
-
-            currentItem.name!!.endsWith(".pem", ignoreCase = true) || currentItem.name!!.endsWith(
-                ".crt", ignoreCase = true
-            ) -> holder.imgThumbnail.setImageResource(R.drawable.cert)
-
-            else -> {
-                if (currentItem.kind?.contains("image", true) == true) {
-                    val requestOptions =
-                        RequestOptions().timeout(15000).diskCacheStrategy(DiskCacheStrategy.ALL)
-                    if (currentItem.kind!!.contains(".gif", true)) {
-                        mContext?.let {
-                            Glide.with(it).setDefaultRequestOptions(requestOptions).asGif()
-                                .load(currentItem.download_url.toString())
-                                .placeholder(R.drawable.file).centerCrop().priority(Priority.HIGH)
-                                .into(holder.imgThumbnail)
-                        }
-                    } else {
-                        mContext?.let {
-                            Glide.with(it).setDefaultRequestOptions(requestOptions)
-                                .load(currentItem.download_url.toString())
-                                .placeholder(R.drawable.file).centerCrop().priority(Priority.HIGH)
-                                .into(holder.imgThumbnail)
-                        }
-                    }
-                } else {
-                    holder.imgThumbnail.setImageResource(R.drawable.file)
+        if (drawableResource != null) {
+            holder.imgThumbnail.setImageResource(drawableResource)
+        } else {
+            if (currentItem.kind?.contains("image", true) == true) {
+                val isGif = currentItem.kind!!.contains(".gif", true)
+                mContext?.let {
+                    loadImage(it, currentItem.download_url.toString(), isGif, holder.imgThumbnail)
                 }
+            } else {
+                holder.imgThumbnail.setImageResource(R.drawable.file)
             }
         }
         holder.txtInfo.apply {
@@ -177,9 +136,7 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         holder.downloadBtn.setOnClickListener {}
         if (newItemsList?.let {
                 containsItemWithSameNameAndSize(
-                    it,
-                    currentItem.name!!,
-                    currentItem.size!!
+                    it, currentItem.name!!, currentItem.size!!
                 )
             } == true) {
             holder.downloadBtn.isEnabled = false
@@ -189,25 +146,12 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
             holder.downloadImg.setImageResource(R.drawable.ic_cloud_download)
         }
         holder.downloadBtn.setOnClickListener {
-            // Todo: Uncomment this block to show to user that the file is already downloaded
-//            if (newItemsList?.let { it1 -> containsName(it1, currentItem.name) } == true) {
-//                Log.d("ContentAdapter", "Already downloaded")
-//                mContext?.showToast(
-//                    "${mContext!!.getString(R.string.already_downloaded)} ${
-//                        FileUtils.getFilePath(
-//                            mContext!!, currentItem.name.toString()
-//                        )
-//                    }", Toast.LENGTH_LONG
-//                )
-//                return@setOnClickListener
-//            }
             if (GeneralUtils.hasActiveInternetConnection(mContext!!)) {
                 holder.downloadBtn.isEnabled = false
                 holder.downloadImg.setImageResource(R.drawable.ic_complete)
                 mContext?.let { it1 ->
                     UploadDownloadUtils.startDownload(
-                        it1,
-                        currentItem
+                        it1, currentItem
                     )
                 }
             } else {
@@ -223,7 +167,10 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
     ): Boolean {
         val matchingItems = itemList.filter { it.name == currentItemName }
         for (item in matchingItems) {
-            Log.d("ContentAdapter", "Matching item size: ${item.size}, Current item size: $currentItemSize")
+            Log.i(
+                Constants.ContentAdapterTag,
+                "Matching item size: ${item.size}, Current item size: $currentItemSize"
+            )
             if (item.size == currentItemSize) {
                 return matchingItems.any { it.size.toString() == currentItemSize }
             }
@@ -334,6 +281,23 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
             notifyDataSetChanged()
         }
     }
+
+    private fun loadImage(
+        context: Context, url: String, isGif: Boolean, imageView: ImageView
+    ) {
+        val requestOptions =
+            RequestOptions().timeout(15000).diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.file).centerCrop().priority(Priority.HIGH)
+
+        val glideRequest = Glide.with(context).setDefaultRequestOptions(requestOptions)
+
+        if (isGif) {
+            glideRequest.asGif().load(url).into(imageView)
+        } else {
+            glideRequest.load(url).into(imageView)
+        }
+    }
+
 
     companion object {
         private val PAYLOAD_STATE_CHANGED = Any()
