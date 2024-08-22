@@ -41,18 +41,36 @@ class AboutFragment : Fragment() {
                 ).show()
             }
         }
+
         val dpcLogFile = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "dpc_logs.zip"
         )
-        binding.dpcLogsLayout.visibility =
-            dpcLogFile.exists().let { if (it) View.VISIBLE else View.GONE }
+
+        // Rename the file to include the device name
+        val deviceName = GeneralUtils.getDeviceName(requireContext())
+        val newFileName = "${deviceName} - ${dpcLogFile.name}"
+        val renamedFile = File(dpcLogFile.parent, newFileName)
+
+        if (dpcLogFile.exists()) {
+            // Rename the file
+            if (dpcLogFile.renameTo(renamedFile)) {
+                Log.i("AboutFragment", "File renamed to: $newFileName")
+                binding.dpcLogsLayout.visibility = View.VISIBLE
+            } else {
+                Log.e("AboutFragment", "File renaming failed")
+                binding.dpcLogsLayout.visibility = View.GONE
+            }
+        } else {
+            binding.dpcLogsLayout.visibility = View.GONE
+        }
+
         binding.dpcLogsUpload.setOnClickListener {
             Log.i("AboutFragment", "DPC logs Available")
             if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
-                Toast.makeText(requireContext(), "Uploading DPC logs...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Uploading Esper Agent logs...", Toast.LENGTH_SHORT).show()
                 UploadDownloadUtils.uploadFile(
-                    dpcLogFile.path, dpcLogFile.name, requireContext(), viewLifecycleOwner, true
+                    renamedFile.path, renamedFile.name, requireContext(), viewLifecycleOwner, true
                 )
             } else {
                 Toast.makeText(
@@ -63,4 +81,5 @@ class AboutFragment : Fragment() {
             }
         }
     }
+
 }
