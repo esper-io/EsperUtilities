@@ -3,6 +3,7 @@ package io.esper.android.service
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
@@ -76,7 +77,7 @@ class LogCollectionService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
-            "io.esper.android.files.ACTION_START_LOG_COLLECTION" -> {
+            GENERAL_LOG -> {
                 val logPath = intent.getStringExtra("log_path")
                 if (!logPath.isNullOrEmpty()) {
                     Log.i(
@@ -94,6 +95,53 @@ class LogCollectionService : LifecycleService() {
                         "Log path is missing, skipping log collection."
                     )
                 }
+            }
+
+            AMC_LOG -> {
+                val customAppPackageName = intent.getStringExtra("customAppPackageName")
+                val customAppClassName = intent.getStringExtra("customAppClassName")
+                val customAppExtras = intent.getBundleExtra("customAppExtras")
+
+                if (customAppPackageName.isNullOrEmpty() || customAppClassName.isNullOrEmpty()) {
+                    Log.e(
+                        Constants.LogCollectionServiceTag,
+                        "Custom app package name or class name is missing, skipping log collection."
+                    )
+                    stopService()
+                    return START_NOT_STICKY
+                }
+                // Fire intent to launch the other app
+                val launchIntent = Intent(customAppPackageName).apply {
+                    component = ComponentName(customAppPackageName, customAppClassName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    // Directly add all extras from the Bundle to the new Intent
+                    customAppExtras?.let {
+                        putExtras(it)  // Add all extras passed in the Bundle without checking for specific keys
+                    }
+                }
+                startActivity(launchIntent)
+
+                // Wait for some time (e.g., 10 seconds) for the other app to save the log file
+                Handler(Looper.getMainLooper()).postDelayed({
+                    val logPath = intent.getStringExtra("log_path")
+                    if (!logPath.isNullOrEmpty()) {
+                        Log.i(
+                            Constants.LogCollectionServiceTag,
+                            "Log path is $logPath, proceeding with log collection."
+                        )
+                        zipFileName =
+                            "${GeneralUtils.getDeviceName(this)}-${GeneralUtils.getCurrentDateTime()}.zip"
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            processLogPath(logPath)
+                        }, 10000) // 10 seconds delay
+                    } else {
+                        Log.i(
+                            Constants.LogCollectionServiceTag,
+                            "Log path is missing, skipping log collection."
+                        )
+
+                    }
+                }, 10000) // 10 seconds delay
             }
 
             else -> {
@@ -148,6 +196,11 @@ class LogCollectionService : LifecycleService() {
         super.onBind(intent)
         return null
     }
+
+    companion object {
+        private const val GENERAL_LOG = "io.esper.android.files.ACTION_START_LOG_COLLECTION"
+        private const val AMC_LOG = "io.esper.android.files.custom.ACTION_START_LOG_COLLECTION"
+    }
 }
 
 /**
@@ -169,6 +222,9 @@ class LogCollectionService : LifecycleService() {
  *                         "serviceType": "FOREGROUND",
  *                         "extras": {
  *                             "log_path": "/storage/emulated/0/esperfiles/qwe123qwe.png"
+ *                             "customAppExtras": {
+ *                                  "initiate_export_log": "true"
+ *                             }
  *                         }
  *                     }
  *                 }
