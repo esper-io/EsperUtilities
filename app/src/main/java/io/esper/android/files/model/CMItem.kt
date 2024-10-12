@@ -1,37 +1,31 @@
-@file:Suppress("unused")
-
 package io.esper.android.files.model
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
-import com.google.gson.annotations.Expose
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
+// Using data class for CMItem
+data class CMItem(
+    @SerializedName("count") val count: Int? = null,
 
-class CMItem(
-    @SerializedName("count") @Expose val count: Int? = null,
+    @SerializedName("next") val next: String? = null,
 
-    @SerializedName("next") @Expose val next: String? = null,
+    @SerializedName("previous") val previous: String? = null,
 
-    @SerializedName("previous") @Expose val previous: String? = null,
-
-    @SerializedName("results") @Expose val results: MutableList<AllContent>? = null
+    @SerializedName("results") val results: List<AllContent>? = null  // Changed MutableList to List
 )
 
-@Entity(tableName = "AllContent", primaryKeys = ["id"])
-class AllContent(
+@Entity(tableName = "AllContent")
+data class AllContent(
+    @PrimaryKey @SerializedName("id") val id: String,
 
-    @ColumnInfo(name = "name") @SerializedName("name") @Expose var name: String? = null,
+    @SerializedName("name") val name: String? = null,
 
-    @ColumnInfo(name = "download_url") @SerializedName("download_url") @Expose var download_url: String? = null,
+    @SerializedName("download_url") val downloadUrl: String? = null,  // Adjusted naming to camelCase
 
-    @ColumnInfo(name = "size") @SerializedName("size") @Expose var size: String? = null,
+    @SerializedName("size") val size: Long? = null,  // Changed type to Long
 
-    @ColumnInfo(name = "kind") @SerializedName("kind") @Expose var kind: String? = null,
-//        @SerializedName("tags")
-//        @Expose
-//        @ColumnInfo(name = "tags")
-//        var tags: MutableList<AppData>? = null,
+    @SerializedName("kind") val kind: String? = null,
 
-    @SerializedName("id") @Expose var id: String
+    @SerializedName("tags") val tags: List<String>? = null
 )

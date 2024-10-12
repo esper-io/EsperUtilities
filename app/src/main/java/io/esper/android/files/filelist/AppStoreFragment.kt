@@ -331,4 +331,10 @@ class AppStoreFragment : Fragment() {
             stopRefreshAnim()
         }
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        progressDialog?.dismiss()
+        progressDialog = null
+    }
 }

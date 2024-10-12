@@ -4,7 +4,6 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import io.esper.appstore.data.ApplicationDao
-import io.esper.appstore.data.DataTypeConverter
 import io.esper.appstore.model.AllApps
 import io.esper.appstore.model.AppData
 import io.esper.appstore.model.AppData1

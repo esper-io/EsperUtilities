@@ -1,7 +1,6 @@
 package api
 
 import io.esper.android.files.model.CMItem
-import io.esper.android.files.model.DeviceInfo
 import io.esper.appstore.model.ApplicationsInfo
 import io.esper.appstore.model.ApplicationsInfo1
 import io.esper.appstore.model.ApplicationsInfo2
@@ -12,12 +11,12 @@ import retrofit2.http.Query
 
 interface EsperEndpoints {
 
-    @GET("content")
-    fun getAllContent(
+    @GET("content/")
+    suspend fun getAllContent(
         @Header("Authorization") token: String,
         @Query("limit") limit: Int,
         @Query("offset") offset: Int
-    ): Call<CMItem>
+    ): CMItem
 
     @GET("application")
     fun getAllApplications(
