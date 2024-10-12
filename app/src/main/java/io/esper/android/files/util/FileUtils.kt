@@ -21,6 +21,7 @@ import io.esper.android.files.provider.archive.isArchivePath
 import io.esper.android.files.provider.linux.isLinuxPath
 import io.esper.android.files.util.Constants.FileUtilsTag
 import io.esper.android.files.util.UploadDownloadUtils.uploadFile
+import io.esper.android.service.LogCollectionService
 import io.esper.devicesdk.EsperDeviceSDK
 import net.lingala.zip4j.ZipFile
 import java.io.File
@@ -281,7 +282,8 @@ object FileUtils {
 
     fun isAppInstalled(context: Context, packageName: String): Boolean {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
+            val packageInfo =
+                context.packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
             packageInfo.applicationInfo.enabled && packageInfo.packageName == packageName
         } catch (e: PackageManager.NameNotFoundException) {
             false
@@ -315,7 +317,8 @@ object FileUtils {
         private val zipFileName: String,
         private val viewLifecycleOwner: LifecycleOwner,
         private val upload: Boolean = true,
-        private val fromService: Boolean = false
+        private val fromService: Boolean = false,
+        private val service: LogCollectionService? = null
     ) : AsyncTask<Void, Int, Boolean>() {
 
         private var progressDialog: ProgressDialog? = null
@@ -343,13 +346,20 @@ object FileUtils {
             if (result == true && zipFilePath != null) {
                 if (upload && GeneralUtils.hasActiveInternetConnection(context)) {
                     uploadFile(
-                        zipFilePath + zipFileName, zipFileName, context, viewLifecycleOwner, true, fromService
+                        zipFilePath + zipFileName,
+                        zipFileName,
+                        context,
+                        viewLifecycleOwner,
+                        true,
+                        fromService
                     )
                 } else {
-                    Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "No Internet Connection, Aborting!", Toast.LENGTH_SHORT)
+                        .show()
                     deleteFile(zipFilePath + zipFileName)
                 }
             } else {
+                service?.stopService()
                 Toast.makeText(context, "Compression failed!", Toast.LENGTH_SHORT).show()
             }
         }
@@ -375,4 +385,8 @@ object FileUtils {
         }
     }
 
+    fun createDir(mCurrentPath: String) {
+        val fileDirectory = File(mCurrentPath)
+        if (!fileDirectory.exists()) fileDirectory.mkdir()
+    }
 }

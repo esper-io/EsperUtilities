@@ -3,9 +3,9 @@ package io.esper.android.service
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -15,8 +15,10 @@ import androidx.lifecycle.LifecycleService
 import io.esper.android.files.R
 import io.esper.android.files.filelist.FileListActivity
 import io.esper.android.files.util.Constants
+import io.esper.android.files.util.Constants.LogCollectionServiceTag
 import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
+import io.esper.android.files.util.ManagedConfigUtils
 import net.gotev.uploadservice.observer.request.GlobalRequestObserver
 import java.io.File
 
@@ -34,10 +36,17 @@ class LogCollectionService : LifecycleService() {
         // Initialize the global upload observer
         globalUploadObserver = GlobalUploadObserver(this)
         GlobalRequestObserver(application, globalUploadObserver)
+
+        if (GeneralUtils.getDeviceName(this).isNullOrEmpty()) {
+            ManagedConfigUtils.getManagedConfigValues(this,
+                wasIsItAForceRefresh = false,
+                triggeredFromService = true
+            )
+        }
     }
 
     fun stopService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
             stopForeground(true)
@@ -46,7 +55,7 @@ class LogCollectionService : LifecycleService() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 CHANNEL_ID, "Log Collection Service Channel", NotificationManager.IMPORTANCE_DEFAULT
             )
@@ -75,13 +84,12 @@ class LogCollectionService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-
         when (intent?.action) {
             GENERAL_LOG -> {
                 val logPath = intent.getStringExtra("log_path")
                 if (!logPath.isNullOrEmpty()) {
                     Log.i(
-                        Constants.LogCollectionServiceTag,
+                        LogCollectionServiceTag,
                         "Log path is $logPath, proceeding with log collection."
                     )
                     zipFileName =
@@ -91,62 +99,14 @@ class LogCollectionService : LifecycleService() {
                     }, 10000) // 10 seconds delay
                 } else {
                     Log.i(
-                        Constants.LogCollectionServiceTag,
-                        "Log path is missing, skipping log collection."
+                        LogCollectionServiceTag, "Log path is missing, skipping log collection."
                     )
                 }
-            }
-
-            AMC_LOG -> {
-                val customAppPackageName = intent.getStringExtra("customAppPackageName")
-                val customAppClassName = intent.getStringExtra("customAppClassName")
-                val customAppExtras = intent.getBundleExtra("customAppExtras")
-
-                if (customAppPackageName.isNullOrEmpty() || customAppClassName.isNullOrEmpty()) {
-                    Log.e(
-                        Constants.LogCollectionServiceTag,
-                        "Custom app package name or class name is missing, skipping log collection."
-                    )
-                    stopService()
-                    return START_NOT_STICKY
-                }
-                // Fire intent to launch the other app
-                val launchIntent = Intent(customAppPackageName).apply {
-                    component = ComponentName(customAppPackageName, customAppClassName)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    // Directly add all extras from the Bundle to the new Intent
-                    customAppExtras?.let {
-                        putExtras(it)  // Add all extras passed in the Bundle without checking for specific keys
-                    }
-                }
-                startActivity(launchIntent)
-
-                // Wait for some time (e.g., 10 seconds) for the other app to save the log file
-                Handler(Looper.getMainLooper()).postDelayed({
-                    val logPath = intent.getStringExtra("log_path")
-                    if (!logPath.isNullOrEmpty()) {
-                        Log.i(
-                            Constants.LogCollectionServiceTag,
-                            "Log path is $logPath, proceeding with log collection."
-                        )
-                        zipFileName =
-                            "${GeneralUtils.getDeviceName(this)}-${GeneralUtils.getCurrentDateTime()}.zip"
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            processLogPath(logPath)
-                        }, 10000) // 10 seconds delay
-                    } else {
-                        Log.i(
-                            Constants.LogCollectionServiceTag,
-                            "Log path is missing, skipping log collection."
-                        )
-
-                    }
-                }, 10000) // 10 seconds delay
             }
 
             else -> {
                 Log.e(
-                    Constants.LogCollectionServiceTag, "Unknown action received: ${intent?.action}"
+                    LogCollectionServiceTag, "Unknown action received: ${intent?.action}"
                 )
             }
         }
@@ -158,20 +118,21 @@ class LogCollectionService : LifecycleService() {
         when {
             logFile.isDirectory && logFile.listFiles()?.isNotEmpty() == true -> {
                 // Directory is not empty, compress it
-                Log.i(Constants.LogCollectionServiceTag, "Compressing directory: $logPath")
+                Log.i(LogCollectionServiceTag, "Compressing directory: $logPath")
                 FileUtils.CompressTask(
                     context = this,
                     pathsToZip = listOf(logPath), // Pass the single file/folder path as a list
                     zipFileName = zipFileName,
                     viewLifecycleOwner = this,
                     upload = true,
-                    fromService = true
+                    fromService = true,
+                    this
                 ).execute()
             }
 
             logFile.isFile -> {
                 // File is not empty, compress it
-                Log.i(Constants.LogCollectionServiceTag, "Compressing file: $logPath")
+                Log.i(LogCollectionServiceTag, "Compressing file: $logPath")
                 val filePathsToZip: ArrayList<String> = ArrayList()
                 filePathsToZip.add(logPath)
                 FileUtils.CompressTask(
@@ -180,13 +141,14 @@ class LogCollectionService : LifecycleService() {
                     zipFileName = zipFileName,
                     viewLifecycleOwner = this,
                     upload = true,
-                    fromService = true
+                    fromService = true,
+                    this
                 ).execute()
             }
 
             else -> {
                 // Log path is neither a file nor a directory
-                Log.e(Constants.LogCollectionServiceTag, "Invalid log path: $logPath")
+                Log.e(LogCollectionServiceTag, "Invalid log path: $logPath")
                 stopService()
             }
         }
@@ -198,8 +160,7 @@ class LogCollectionService : LifecycleService() {
     }
 
     companion object {
-        private const val GENERAL_LOG = "io.esper.android.files.ACTION_START_LOG_COLLECTION"
-        private const val AMC_LOG = "io.esper.android.files.custom.ACTION_START_LOG_COLLECTION"
+        private const val GENERAL_LOG = "${Constants.PACKAGE_NAME}.ACTION_START_LOG_COLLECTION"
     }
 }
 
@@ -222,9 +183,6 @@ class LogCollectionService : LifecycleService() {
  *                         "serviceType": "FOREGROUND",
  *                         "extras": {
  *                             "log_path": "/storage/emulated/0/esperfiles/qwe123qwe.png"
- *                             "customAppExtras": {
- *                                  "initiate_export_log": "true"
- *                             }
  *                         }
  *                     }
  *                 }

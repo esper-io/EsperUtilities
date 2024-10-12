@@ -1,5 +1,6 @@
 package io.esper.android.network
 
+import android.util.Log
 import io.esper.android.network.model.UrlAndPortItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -8,11 +9,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.IOException
-import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.net.URL
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class NetworkCheckTask(
@@ -20,6 +22,8 @@ class NetworkCheckTask(
     private val items: MutableList<UrlAndPortItem>,
     private val itemsToCheck: List<UrlAndPortItem>
 ) {
+    private val TAG = "NetworkCheckTask"
+
     var job: Job? = null
     private val successCount = AtomicInteger(0)
     private val failureCount = AtomicInteger(0)
@@ -30,7 +34,7 @@ class NetworkCheckTask(
                 async {
                     val isAccessible = if (item.url.startsWith("http")) {
                         try {
-                            checkUrl(item.url, item.port)
+                            checkUrl(item.url)
                         } catch (e: IOException) {
                             e.printStackTrace()
                             false
@@ -61,19 +65,17 @@ class NetworkCheckTask(
         job?.cancel()
     }
 
-    private fun checkUrl(urlString: String, port: Int): Boolean {
-        var urlConnection: HttpURLConnection? = null
+    private fun checkUrl(urlString: String): Boolean {
+        val client = OkHttpClient.Builder().connectTimeout(5, TimeUnit.SECONDS).build()
+
         return try {
-            val url = URL(urlString)
-            urlConnection = url.openConnection() as HttpURLConnection
-            urlConnection.requestMethod = "HEAD"
-            urlConnection.connectTimeout = 5000
-            urlConnection.connect()
-            urlConnection.responseCode == HttpURLConnection.HTTP_OK
+            val request = Request.Builder().url(urlString).head().build()
+            client.newCall(request).execute().use { response ->
+                response.isSuccessful // True if code in [200..300)
+            }
         } catch (e: IOException) {
+            Log.e(TAG, "checkUrl: Error checking URL: $urlString", e)
             false
-        } finally {
-            urlConnection?.disconnect()
         }
     }
 

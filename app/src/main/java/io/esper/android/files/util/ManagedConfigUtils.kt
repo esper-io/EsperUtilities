@@ -33,7 +33,7 @@ object ManagedConfigUtils {
 //        "api_key": "dummy",
 //        //(default: false)
 //        "upload_content": true,
-//        //(default: InternalRootFolder (/storage/emulated/0/esperfiles)
+//        //(default: InternalRootFolder (/storage/emulated/0/esperfiles/)
 //        "internal_root_path": "/storage/emulated/0/Download",
 //        //(default: ExternalRootFolder (/storage/SD-CARD/esperfiles/)
 //        "external_root_path": "Download/",
@@ -68,7 +68,7 @@ object ManagedConfigUtils {
 //        "on_demand_download": true,
 //        "api_key": "",
 //        "upload_content": true,
-//        "internal_root_path": "/storage/emulated/0/esperfiles",
+//        "internal_root_path": "/storage/emulated/0/esperfiles/",
 //        "external_root_path": "/storage/SD-CARD/esperfiles/",
 //        "sharing_allowed": true,
 //        "creation_allowed": true,
@@ -93,7 +93,7 @@ object ManagedConfigUtils {
 //        "on_demand_download": false,
 //        "api_key": "",
 //        "upload_content": false,
-//        "internal_root_path": "/storage/emulated/0/esperfiles",
+//        "internal_root_path": "/storage/emulated/0/esperfiles/",
 //        "external_root_path": "/storage/SD-CARD/esperfiles/",
 //        "sharing_allowed": false,
 //        "creation_allowed": false,
@@ -131,7 +131,8 @@ object ManagedConfigUtils {
         appRestrictions: Bundle,
         context: Context,
         sharedPrefManaged: SharedPreferences,
-        wasIsItAForceRefresh: Boolean
+        wasIsItAForceRefresh: Boolean,
+        triggeredFromService: Boolean = false
     ) {
 
         val appNameChange = appNameManagedConfig(context, appRestrictions, sharedPrefManaged)
@@ -152,7 +153,7 @@ object ManagedConfigUtils {
             onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
         val esperAppStoreVisibility =
             esperAppStoreVisibilityManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val apiKeyChange = apiKeyManagedConfig(context, appRestrictions, sharedPrefManaged)
+        val apiKeyChange = apiKeyManagedConfig(context, appRestrictions, sharedPrefManaged, triggeredFromService)
         val uploadContentChange =
             uploadContentManagedConfig(context, appRestrictions, sharedPrefManaged)
         val shareAllowedChange =
@@ -181,21 +182,30 @@ object ManagedConfigUtils {
             GeneralUtils.restart(context)
         }
         if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester) {
-            if (!apiKeyChange) {
-                Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
-                GeneralUtils.triggerRebirth(context)
-            } else {
+            if (triggeredFromService) {
                 Log.i(
                     Constants.ManagedConfigUtilsTag,
-                    "Root Path Changed along with SDK ApiKey, so SDK will restart the "
+                    "Managed Config Values Changed (Triggered From Service)"
                 )
+            } else {
+                if (!apiKeyChange) {
+                    Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
+                    GeneralUtils.triggerRebirth(context)
+                } else {
+                    Log.i(
+                        Constants.ManagedConfigUtilsTag,
+                        "Root Path Changed along with SDK ApiKey, so SDK will restart the "
+                    )
+                }
             }
         }
     }
 
     @JvmStatic
     fun getManagedConfigValues(
-        context: Context, wasIsItAForceRefresh: Boolean = false
+        context: Context,
+        wasIsItAForceRefresh: Boolean = false,
+        triggeredFromService: Boolean = false
     ) {
         Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values (Manually Triggered)")
         var restrictionsBundle: Bundle?
@@ -208,8 +218,16 @@ object ManagedConfigUtils {
             restrictionsBundle = Bundle()
         }
 
-        mainFunction(restrictionsBundle, context, sharedPrefManaged, wasIsItAForceRefresh)
-        startManagedConfigValuesReceiver(context, sharedPrefManaged)
+        mainFunction(
+            restrictionsBundle,
+            context,
+            sharedPrefManaged,
+            wasIsItAForceRefresh,
+            triggeredFromService
+        )
+        if (!triggeredFromService) {
+            startManagedConfigValuesReceiver(context, sharedPrefManaged)
+        }
     }
 
     private fun appNameManagedConfig(
@@ -427,7 +445,10 @@ object ManagedConfigUtils {
     }
 
     private fun apiKeyManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
+        context: Context,
+        appRestrictions: Bundle,
+        sharedPrefManaged: SharedPreferences,
+        triggeredFromService: Boolean
     ): Boolean {
         var result = false
         val apiKey =
@@ -445,7 +466,7 @@ object ManagedConfigUtils {
             sharedPrefManaged.edit().putString(Constants.SHARED_MANAGED_CONFIG_API_KEY, apiKey)
                 .apply()
             result = true
-            GeneralUtils.initSDK(sharedPrefManaged, context)
+            GeneralUtils.initSDK(sharedPrefManaged, context, triggeredFromService)
             Log.i(Constants.ManagedConfigUtilsTag, "API Key Changed")
         }
         return result

@@ -1,7 +1,6 @@
 package io.esper.android.files.about
 
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +8,18 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import io.esper.android.files.databinding.AboutFragmentBinding
 import io.esper.android.files.ui.LicensesDialogFragment
+import io.esper.android.files.util.Constants
+import io.esper.android.files.util.Constants.AboutFragmentTag
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.UploadDownloadUtils
+import io.esper.android.files.workers.FileDeletionWorker
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class AboutFragment : Fragment() {
     private lateinit var binding: AboutFragmentBinding
@@ -43,43 +49,69 @@ class AboutFragment : Fragment() {
         }
 
         val dpcLogFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "dpc_logs.zip"
+            Constants.InternalDownloadFolder, "dpc_logs.zip"
         )
 
         // Rename the file to include the device name
         val deviceName = GeneralUtils.getDeviceName(requireContext())
-        val newFileName = "${deviceName} - ${dpcLogFile.name}"
+        val newFileName = "${deviceName}-${dpcLogFile.name}"
         val renamedFile = File(dpcLogFile.parent, newFileName)
 
-        if (dpcLogFile.exists()) {
-            // Rename the file
-            if (dpcLogFile.renameTo(renamedFile)) {
-                Log.i("AboutFragment", "File renamed to: $newFileName")
-                binding.dpcLogsLayout.visibility = View.VISIBLE
+        if (renamedFile.exists()) {
+            binding.dpcLogsLayout.visibility = View.VISIBLE
+            scheduleLogFileDeletion(renamedFile)
+        } else {
+            if (dpcLogFile.exists()) {
+                // Rename the file
+                if (dpcLogFile.renameTo(renamedFile)) {
+                    Log.i(AboutFragmentTag, "File renamed to: $newFileName")
+                    binding.dpcLogsLayout.visibility = View.VISIBLE
+                    scheduleLogFileDeletion(renamedFile)
+                } else {
+                    Log.e(AboutFragmentTag, "File renaming failed")
+                    binding.dpcLogsLayout.visibility = View.GONE
+                }
             } else {
-                Log.e("AboutFragment", "File renaming failed")
                 binding.dpcLogsLayout.visibility = View.GONE
             }
-        } else {
-            binding.dpcLogsLayout.visibility = View.GONE
         }
 
         binding.dpcLogsUpload.setOnClickListener {
-            Log.i("AboutFragment", "DPC logs Available")
-            if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
-                Toast.makeText(requireContext(), "Uploading Esper Agent logs...", Toast.LENGTH_SHORT).show()
-                UploadDownloadUtils.uploadFile(
-                    renamedFile.path, renamedFile.name, requireContext(), viewLifecycleOwner, true
-                )
+            if (renamedFile.exists()) {
+                Log.i(AboutFragmentTag, "onActivityCreated: DPC logs Available")
+                if (GeneralUtils.hasActiveInternetConnection(requireContext())) {
+                    Toast.makeText(
+                        requireContext(), "Uploading Esper Agent logs...", Toast.LENGTH_SHORT
+                    ).show()
+                    UploadDownloadUtils.uploadFile(
+                        renamedFile.path,
+                        renamedFile.name,
+                        requireContext(),
+                        viewLifecycleOwner,
+                        true
+                    )
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "No active internet connection, try again after sometime.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             } else {
+                Log.e(AboutFragmentTag, "onActivityCreated: DPC logs not available")
                 Toast.makeText(
-                    requireContext(),
-                    "No active internet connection, try again after sometime.",
-                    Toast.LENGTH_SHORT
+                    requireContext(), "DPC logs not available for upload. Re-trigger if needed.", Toast.LENGTH_SHORT
                 ).show()
             }
         }
     }
 
+    private fun scheduleLogFileDeletion(renamedDpcLogFile: File) {
+        // Schedule the file deletion after 30 seconds
+        val workManager = WorkManager.getInstance(requireContext())
+        val deleteRequest =
+            OneTimeWorkRequestBuilder<FileDeletionWorker>().setInitialDelay(30, TimeUnit.SECONDS)
+                .setInputData(workDataOf("FILE_PATH" to renamedDpcLogFile.absolutePath)).build()
+        workManager.enqueue(deleteRequest)
+    }
 }

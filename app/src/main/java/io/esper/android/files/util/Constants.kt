@@ -5,8 +5,14 @@ import java.io.File
 
 object Constants {
 
+    const val PACKAGE_NAME: String = "io.esper.android.files"
+
     var InternalRootFolder: String =
         Environment.getExternalStorageDirectory().path + File.separator + "esperfiles" + File.separator
+
+    // Internal Storage Downloads folder
+    var InternalDownloadFolder: File? =
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
     var ExternalRootFolder: String = "esperfiles" + File.separator
 
@@ -30,6 +36,7 @@ object Constants {
     const val LogCollectionServiceTag = "LogCollectionService"
     const val GlobalUploadObserverTag = "GlobalUploadObserver"
     const val ContentAdapterTag = "ContentAdapter"
+    const val AboutFragmentTag = "AboutFragment"
 
     const val SORT_ASCENDING = "ascending"
 

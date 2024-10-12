@@ -105,7 +105,9 @@ object GeneralUtils {
         return dateFormat.format(date)
     }
 
-    private fun startEsperSDKActivation(context: Context, sharedPrefManaged: SharedPreferences?) {
+    private fun startEsperSDKActivation(
+        context: Context, sharedPrefManaged: SharedPreferences?, triggeredFromService: Boolean
+    ) {
         val token = sharedPrefManaged!!.getString(
             Constants.SHARED_MANAGED_CONFIG_API_KEY, null
         )
@@ -116,7 +118,7 @@ object GeneralUtils {
             sdk.activateSDK(token, object : EsperDeviceSDK.Callback<Void?> {
                 override fun onResponse(response: Void?) {
                     getDeviceDetails(sdk, sharedPrefManaged)
-                    getProvisioningInfo(context, sdk, sharedPrefManaged)
+                    getProvisioningInfo(context, sdk, sharedPrefManaged, triggeredFromService)
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -165,7 +167,10 @@ object GeneralUtils {
     }
 
     private fun getProvisioningInfo(
-        context: Context, sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences
+        context: Context,
+        sdk: EsperDeviceSDK,
+        sharedPrefManaged: SharedPreferences,
+        triggeredFromService: Boolean
     ) {
         sdk.getProvisionInfo(object : EsperDeviceSDK.Callback<ProvisionInfo> {
             override fun onResponse(response: ProvisionInfo?) {
@@ -179,9 +184,10 @@ object GeneralUtils {
                     sharedPrefManaged.edit()
                         .putString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, enterpriseId)
                         .apply()
+                }
+                if (!triggeredFromService) {
                     triggerRebirth(context)
                 }
-                triggerRebirth(context)
             }
 
             override fun onFailure(t: Throwable) {
@@ -326,8 +332,12 @@ object GeneralUtils {
         return dir.delete()
     }
 
-    fun initSDK(sharedPrefManaged: SharedPreferences, context: Context) {
-        startEsperSDKActivation(context, sharedPrefManaged)
+    fun initSDK(
+        sharedPrefManaged: SharedPreferences,
+        context: Context,
+        triggeredFromService: Boolean = false
+    ) {
+        startEsperSDKActivation(context, sharedPrefManaged, triggeredFromService)
     }
 
     fun getEsperSDK(context: Context): EsperDeviceSDK {
