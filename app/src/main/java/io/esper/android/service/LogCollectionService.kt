@@ -39,7 +39,7 @@ class LogCollectionService : LifecycleService() {
 
         if (GeneralUtils.getDeviceName(this).isNullOrEmpty()) {
             ManagedConfigUtils.getManagedConfigValues(this,
-                wasIsItAForceRefresh = false,
+                wasForceRefresh = false,
                 triggeredFromService = true
             )
         }

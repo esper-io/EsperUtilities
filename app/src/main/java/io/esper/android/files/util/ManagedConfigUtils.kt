@@ -13,104 +13,89 @@ import io.esper.android.files.R
 
 object ManagedConfigUtils {
 
-//    Managed Config Example Values
-//    {
-//        //(default: Files)
-//        "app_name": "Company Name",
-//        //(default: false)
-//        "show_screenshots_folder": true,
-//        //(default: false)
-//        "deletion_allowed": true,
-//        //(default: false)
-//        "archive_allowed": true,
-//        //(default: false)
-//        "rename_allowed": true,
-//        //(default: false)
-//        "cut_copy_allowed": true,
-//        //(default: false)
-//        "on_demand_download": true,
-//        //(default: null)
-//        "api_key": "dummy",
-//        //(default: false)
-//        "upload_content": true,
-//        //(default: InternalRootFolder (/storage/emulated/0/esperfiles/)
-//        "internal_root_path": "/storage/emulated/0/Download",
-//        //(default: ExternalRootFolder (/storage/SD-CARD/esperfiles/)
-//        "external_root_path": "Download/",
-//        //(default: false)
-//        "sharing_allowed": true
-//        //(default: false)
-//        "creation_allowed": true
-//        //(default: false)
-//        "add_storage": true
-//        //(default: false)
-//        "ftp_allowed": true
-//        //(default: false)
-//        "show_device_details": true
-//        //(default: false)
-//        "esper_app_store_visibility": true
-//        //(default: false)
-//        "convert_files_to_app_store": true
-//        //(default: false)
-//        "network_tester_visibility": true
-//        //(default: false)
-//        "convert_files_to_network_tester": true
-//    }
+    // Sample Json
+    /**
+     * {
+     *   "api_key": "mr915DuuSsM26U5hTrsxMwcNWqcf3G",
+     *   "external_root_path": "/esperfiles/",
+     *   "internal_root_path": "/storage/emulated/0/esperfiles/",
+     *   "app_name": "Files",
+     *   "add_storage": false,
+     *   "ftp_allowed": false,
+     *   "rename_allowed": false,
+     *   "upload_content": false,
+     *   "archive_allowed": false,
+     *   "sharing_allowed": false,
+     *   "creation_allowed": false,
+     *   "cut_copy_allowed": false,
+     *   "deletion_allowed": false,
+     *   "on_demand_download": false,
+     *   "show_device_details": false,
+     *   "show_screenshots_folder": false,
+     *   "network_tester_visibility": false,
+     *   "convert_files_to_app_store": false,
+     *   "esper_app_store_visibility": false,
+     *   "convert_files_to_network_tester": false,
+     *   "use_custom_tenant_for_network_tester": false
+     * }
+     */
 
-// Sample Json
-//    {
-//        "app_name": "Files",
-//        "show_screenshots_folder": true,
-//        "deletion_allowed": true,
-//        "archive_allowed": true,
-//        "rename_allowed": true,
-//        "cut_copy_allowed": true,
-//        "on_demand_download": true,
-//        "api_key": "",
-//        "upload_content": true,
-//        "internal_root_path": "/storage/emulated/0/esperfiles/",
-//        "external_root_path": "/storage/SD-CARD/esperfiles/",
-//        "sharing_allowed": true,
-//        "creation_allowed": true,
-//        "add_storage": true,
-//        "ftp_allowed": true,
-//        "show_device_details": true,
-//        "esper_app_store_visibility": true,
-//        "convert_files_to_app_store": false,
-//        "network_tester_visibility": true,
-//        "convert_files_to_network_tester": false,
-//        "use_custom_tenant_for_network_tester": true
-//    }
+    // 2nd Sample Json
+    /**
+     * {
+     *   "api_key": "mr915DuuSsM26U5hTrsxMwcNWqcf3G",
+     *   "external_root_path": "/esperfiles/",
+     *   "internal_root_path": "/storage/emulated/0/esperfiles/",
+     *   "app_name": "Files",
+     *   "add_storage": true,
+     *   "ftp_allowed": true,
+     *   "rename_allowed": true,
+     *   "upload_content": true,
+     *   "archive_allowed": true,
+     *   "sharing_allowed": true,
+     *   "creation_allowed": true,
+     *   "cut_copy_allowed": true,
+     *   "deletion_allowed": true,
+     *   "on_demand_download": true,
+     *   "show_device_details": true,
+     *   "show_screenshots_folder": true,
+     *   "network_tester_visibility": true,
+     *   "convert_files_to_app_store": false,
+     *   "esper_app_store_visibility": true,
+     *   "convert_files_to_network_tester": false,
+     *   "use_custom_tenant_for_network_tester": false
+     * }
+     */
 
-// Sample Json
-//    {
-//        "app_name": "Files",
-//        "show_screenshots_folder": false,
-//        "deletion_allowed": false,
-//        "archive_allowed": false,
-//        "rename_allowed": false,
-//        "cut_copy_allowed": false,
-//        "on_demand_download": false,
-//        "api_key": "",
-//        "upload_content": false,
-//        "internal_root_path": "/storage/emulated/0/esperfiles/",
-//        "external_root_path": "/storage/SD-CARD/esperfiles/",
-//        "sharing_allowed": false,
-//        "creation_allowed": false,
-//        "add_storage": false,
-//        "ftp_allowed": false,
-//        "show_device_details": false,
-//        "esper_app_store_visibility": false,
-//        "convert_files_to_app_store": false,
-//        "network_tester_visibility": false,
-//        "convert_files_to_network_tester": false,
-//        "use_custom_tenant_for_network_tester": false
-//    }
+    // Time-based guard to prevent continuous restarts
+    private const val RESTART_DELAY_MS = 5000L
+    private var isReceiverRegistered = false
+
+    @JvmStatic
+    fun getManagedConfigValues(
+        context: Context, wasForceRefresh: Boolean = false, triggeredFromService: Boolean = false
+    ) {
+        Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values")
+        val sharedPrefManaged = context.applicationContext.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        )
+        val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+        val restrictionsBundle =
+            userManager.getApplicationRestrictions(context.packageName) ?: Bundle()
+
+        applyManagedConfig(
+            context, restrictionsBundle, sharedPrefManaged, wasForceRefresh, triggeredFromService
+        )
+
+        if (!triggeredFromService && !isReceiverRegistered) {
+            startManagedConfigValuesReceiver(context, sharedPrefManaged)
+        }
+    }
 
     private fun startManagedConfigValuesReceiver(
         context: Context, sharedPrefManaged: SharedPreferences
     ) {
-        val myRestrictionsMgr =
+        val restrictionsMgr =
             context.getSystemService(Context.RESTRICTIONS_SERVICE) as RestrictionsManager
         val restrictionsFilter = IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
 
@@ -118,568 +103,281 @@ object ManagedConfigUtils {
             override fun onReceive(context: Context, intent: Intent) {
                 Log.i(
                     Constants.ManagedConfigUtilsTag,
-                    "Getting Managed Config Values (Receiver Triggered)"
+                    "Managed Config Values Changed (Broadcast Received)"
                 )
-                val appRestrictions = myRestrictionsMgr.applicationRestrictions
-                mainFunction(appRestrictions, context, sharedPrefManaged, false)
+                val appRestrictions = restrictionsMgr.applicationRestrictions ?: Bundle()
+                applyManagedConfig(
+                    context, appRestrictions, sharedPrefManaged, wasForceRefresh = false
+                )
             }
         }
         context.registerReceiver(restrictionsReceiver, restrictionsFilter)
+        isReceiverRegistered = true
     }
 
-    private fun mainFunction(
-        appRestrictions: Bundle,
+    private fun applyManagedConfig(
         context: Context,
+        appRestrictions: Bundle,
         sharedPrefManaged: SharedPreferences,
-        wasIsItAForceRefresh: Boolean,
+        wasForceRefresh: Boolean,
         triggeredFromService: Boolean = false
     ) {
+        var requiresRestart = false
+        var requiresRebirth = false
 
-        val appNameChange = appNameManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val internalRootPathChange = internalRootPathManagedConfig(context, appRestrictions)
-        val externalRootPathChange =
-            externalRootPathManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val showScreenshotsFolderChange =
-            showScreenshotsFolderManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val deletionAllowedChange =
-            deletionAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val archivingAllowedChange =
-            archivingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val renamingAllowedChange =
-            renamingAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val cutCopyAllowedChange =
-            cutCopyAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val onDemandDownloadChange =
-            onDemandDownloadManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val esperAppStoreVisibility =
-            esperAppStoreVisibilityManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val apiKeyChange = apiKeyManagedConfig(context, appRestrictions, sharedPrefManaged, triggeredFromService)
-        val uploadContentChange =
-            uploadContentManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val shareAllowedChange =
-            shareAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val creationAllowedChange =
-            creationAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val addStorageChange = addStorageManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val ftpAllowedChange = ftpAllowedManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val showDeviceDetails =
-            showDeviceDetailsManagedConfig(context, appRestrictions, sharedPrefManaged)
-        val convertFilesToAppStore = convertFilesToAppStoreManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val showNetworkTester = showNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val convertFilesToNetworkTester = convertFilesToNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
-        val useCustomTenantForNetworkTester = useCustomTenantForNetworkTesterManagedConfig(
-            context, appRestrictions, sharedPrefManaged
-        )
+        val configList = getConfigurations(context, sharedPrefManaged, triggeredFromService)
 
-        if (appNameChange || showScreenshotsFolderChange || deletionAllowedChange || cutCopyAllowedChange || archivingAllowedChange || renamingAllowedChange || apiKeyChange || uploadContentChange || shareAllowedChange || wasIsItAForceRefresh || creationAllowedChange) {
-            Log.i(Constants.ManagedConfigUtilsTag, "Managed Config Values Changed")
-            GeneralUtils.restart(context)
-        }
-        if (internalRootPathChange || externalRootPathChange || addStorageChange || ftpAllowedChange || onDemandDownloadChange || showDeviceDetails || esperAppStoreVisibility || convertFilesToAppStore || showNetworkTester || convertFilesToNetworkTester || useCustomTenantForNetworkTester) {
-            if (triggeredFromService) {
-                Log.i(
-                    Constants.ManagedConfigUtilsTag,
-                    "Managed Config Values Changed (Triggered From Service)"
-                )
-            } else {
-                if (!apiKeyChange) {
-                    Log.i(Constants.ManagedConfigUtilsTag, "Root Path Changed, Restart App")
-                    GeneralUtils.triggerRebirth(context)
+        for (config in configList) {
+            val changeOccurred = config.apply(appRestrictions, sharedPrefManaged)
+            if (changeOccurred) {
+                if (config.requiresRebirth) {
+                    requiresRebirth = true
                 } else {
-                    Log.i(
-                        Constants.ManagedConfigUtilsTag,
-                        "Root Path Changed along with SDK ApiKey, so SDK will restart the "
-                    )
+                    requiresRestart = true
                 }
+            }
+        }
+
+        // Persist lastRestartTime in SharedPreferences
+        val currentTime = System.currentTimeMillis()
+        val lastRestartTime = sharedPrefManaged.getLong("lastRestartTime", 0L)
+
+        if (requiresRebirth && !triggeredFromService) {
+            if (currentTime - lastRestartTime > RESTART_DELAY_MS) {
+                sharedPrefManaged.edit().putLong("lastRestartTime", currentTime).apply()
+                Log.i(Constants.ManagedConfigUtilsTag, "Configurations changed, triggering rebirth")
+                GeneralUtils.triggerRebirth(context)
+            } else {
+                Log.w(Constants.ManagedConfigUtilsTag, "Rebirth prevented to avoid loop")
+            }
+        } else if (requiresRestart) {
+            if (currentTime - lastRestartTime > RESTART_DELAY_MS) {
+                sharedPrefManaged.edit().putLong("lastRestartTime", currentTime).apply()
+                Log.i(Constants.ManagedConfigUtilsTag, "Configurations changed, restarting app")
+                GeneralUtils.restart(context)
+            } else {
+                Log.w(Constants.ManagedConfigUtilsTag, "Restart prevented to avoid loop")
             }
         }
     }
 
-    @JvmStatic
-    fun getManagedConfigValues(
-        context: Context,
-        wasIsItAForceRefresh: Boolean = false,
-        triggeredFromService: Boolean = false
-    ) {
-        Log.i(Constants.ManagedConfigUtilsTag, "Getting Managed Config Values (Manually Triggered)")
-        var restrictionsBundle: Bundle?
-        val sharedPrefManaged = context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+    private fun getConfigurations(
+        context: Context, sharedPrefManaged: SharedPreferences, triggeredFromService: Boolean
+    ): List<ManagedConfig> {
+        return listOf(
+            // String Configurations
+            StringConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_APP_NAME,
+                defaultValue = context.getString(R.string.app_name),
+                requiresRebirth = false
+            ),
+            StringConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_API_KEY,
+                defaultValue = null,
+                requiresRebirth = false,
+                onChange = { newValue ->
+                    val editor = sharedPrefManaged.edit()
+                    if (newValue.isNullOrEmpty()) {
+                        editor.remove(Constants.SHARED_MANAGED_CONFIG_API_KEY)
+                        Log.i(Constants.ManagedConfigUtilsTag, "API Key removed")
+                    } else {
+                        editor.putString(Constants.SHARED_MANAGED_CONFIG_API_KEY, newValue)
+                        Log.i(Constants.ManagedConfigUtilsTag, "API Key updated")
+                    }
+                    editor.apply()
+                    // Initialize SDK with the new API key
+                    GeneralUtils.initSDK(sharedPrefManaged, context, triggeredFromService)
+                }
+            ),
+            StringConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH,
+                defaultValue = null,
+                requiresRebirth = true,
+                onChange = { newValue ->
+                    val editor = sharedPrefManaged.edit()
+                    if (newValue.isNullOrEmpty()) {
+                        editor.remove(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH)
+                        GeneralUtils.removeExternalStoragePath(sharedPrefManaged)
+                        Log.i(Constants.ManagedConfigUtilsTag, "External Root Path Removed")
+                    } else {
+                        editor.putString(
+                            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH, newValue
+                        )
+                        GeneralUtils.setExternalStoragePath(sharedPrefManaged, newValue)
+                        Log.i(
+                            Constants.ManagedConfigUtilsTag,
+                            "External Root Path Changed to: $newValue"
+                        )
+                    }
+                    editor.apply()
+                }
+            ),
+            StringConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH,
+                defaultValue = null,
+                requiresRebirth = true,
+                onChange = { newValue ->
+                    if (newValue.isNullOrEmpty()) {
+                        GeneralUtils.removeInternalStoragePath(context)
+                        Log.i(Constants.ManagedConfigUtilsTag, "Internal Root Path removed")
+                    } else {
+                        GeneralUtils.setInternalStoragePath(context, newValue)
+                        Log.i(
+                            Constants.ManagedConfigUtilsTag,
+                            "Internal Root Path updated to: $newValue"
+                        )
+                    }
+                }
+            ),
+            // Boolean Configurations
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS,
+                defaultValue = false,
+                requiresRebirth = false,
+                onChange = { _ ->
+                    FileUtils.startScreenShotMove(context)
+                }
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_CREATION_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = false
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
+                defaultValue = false,
+                requiresRebirth = true
+            ),
+            BooleanConfig(
+                key = Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER,
+                defaultValue = false,
+                requiresRebirth = true
+            )
+            // Add any additional configurations here
         )
-        val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
-        restrictionsBundle = userManager.getApplicationRestrictions(context.packageName)
-        if (restrictionsBundle == null) {
-            restrictionsBundle = Bundle()
-        }
+    }
 
-        mainFunction(
-            restrictionsBundle,
-            context,
-            sharedPrefManaged,
-            wasIsItAForceRefresh,
-            triggeredFromService
-        )
-        if (!triggeredFromService) {
-            startManagedConfigValuesReceiver(context, sharedPrefManaged)
+    // Abstract base class for managed configurations
+    sealed class ManagedConfig {
+        abstract val key: String
+        abstract val requiresRebirth: Boolean
+        abstract fun apply(appRestrictions: Bundle, sharedPrefManaged: SharedPreferences): Boolean
+    }
+
+    // Configuration class for Boolean values
+    data class BooleanConfig(
+        override val key: String,
+        val defaultValue: Boolean,
+        override val requiresRebirth: Boolean,
+        val onChange: ((Boolean) -> Unit)? = null
+    ) : ManagedConfig() {
+        override fun apply(appRestrictions: Bundle, sharedPrefManaged: SharedPreferences): Boolean {
+            val newValue = appRestrictions.getBoolean(key, defaultValue)
+            val currentValue = sharedPrefManaged.getBoolean(key, defaultValue)
+            Log.i(
+                Constants.ManagedConfigUtilsTag,
+                "Applying $key: newValue=$newValue, currentValue=$currentValue"
+            )
+            if (newValue != currentValue) {
+                sharedPrefManaged.edit().putBoolean(key, newValue).commit()
+                Log.i(Constants.ManagedConfigUtilsTag, "$key updated to: $newValue")
+                onChange?.invoke(newValue)
+                return true
+            }
+            return false
         }
     }
 
-    private fun appNameManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val newAppName =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_APP_NAME)) appRestrictions.getString(
-                Constants.SHARED_MANAGED_CONFIG_APP_NAME
-            ).toString() else context.getString(R.string.app_name)
-        val changeInValue = newAppName != sharedPrefManaged.getString(
-            Constants.SHARED_MANAGED_CONFIG_APP_NAME, context.getString(R.string.app_name)
-        )
-        if (changeInValue && newAppName.isNotEmpty()) {
-            sharedPrefManaged.edit().putString(Constants.SHARED_MANAGED_CONFIG_APP_NAME, newAppName)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "App Name Changed")
-        } else if (changeInValue && newAppName.isEmpty()) {
-            sharedPrefManaged.edit().remove(Constants.SHARED_MANAGED_CONFIG_APP_NAME).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "App Name Removed")
+    // Configuration class for String values
+    data class StringConfig(
+        override val key: String,
+        val defaultValue: String?,
+        override val requiresRebirth: Boolean,
+        val onChange: ((String?) -> Unit)? = null
+    ) : ManagedConfig() {
+        override fun apply(appRestrictions: Bundle, sharedPrefManaged: SharedPreferences): Boolean {
+            val newValue = appRestrictions.getString(key, defaultValue)
+            val currentValue = sharedPrefManaged.getString(key, defaultValue)
+            Log.i(
+                Constants.ManagedConfigUtilsTag,
+                "Applying $key: newValue='$newValue', currentValue='$currentValue'"
+            )
+            if (newValue != currentValue) {
+                if (newValue == null) {
+                    sharedPrefManaged.edit().remove(key).commit()
+                } else {
+                    sharedPrefManaged.edit().putString(key, newValue).commit()
+                }
+                Log.i(Constants.ManagedConfigUtilsTag, "$key updated to: $newValue")
+                onChange?.invoke(newValue)
+                return true
+            }
+            return false
         }
-        return result
-    }
-
-    private fun internalRootPathManagedConfig(
-        context: Context, appRestrictions: Bundle
-    ): Boolean {
-        var result = false
-        val internalRootPath =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH)) appRestrictions.getString(
-                Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH
-            ).toString() else Constants.InternalRootFolder
-        val changeInValue = internalRootPath != GeneralUtils.getInternalStoragePath(context)
-        if (changeInValue && internalRootPath.isEmpty()) {
-            GeneralUtils.removeInternalStoragePath(context)
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Internal Root Path Removed")
-        } else if (changeInValue) {
-            GeneralUtils.setInternalStoragePath(context, internalRootPath)
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Internal Root Path Changed: $internalRootPath")
-        }
-        return result
-    }
-
-    private fun externalRootPathManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val externalRootPath =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH)) appRestrictions.getString(
-                Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH
-            ).toString() else Constants.ExternalRootFolder
-        val changeInValue = externalRootPath != sharedPrefManaged.getString(
-            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH, Constants.ExternalRootFolder
-        )
-        if (changeInValue && externalRootPath.isEmpty()) {
-            GeneralUtils.removeExternalStoragePath(sharedPrefManaged)
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "External Root Path Removed")
-        } else if (changeInValue) {
-            GeneralUtils.setExternalStoragePath(sharedPrefManaged, externalRootPath)
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "External Root Path Changed")
-        }
-        return result
-    }
-
-    private fun showScreenshotsFolderManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val showScreenshotsFolder =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS
-            ) else false
-        val changeInValue = showScreenshotsFolder != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_SCREENSHOTS, showScreenshotsFolder)
-                .apply()
-            FileUtils.startScreenShotMove(context)
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Show Screenshots Folder Changed")
-        }
-        return result
-    }
-
-    private fun deletionAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val deletionAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED
-            ) else false
-        val changeInValue = deletionAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, deletionAllowed)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Deletion Allowed Changed")
-        }
-        return result
-    }
-
-    private fun archivingAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val archiveAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED
-            ) else false
-        val changeInValue = archiveAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, archiveAllowed).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Archive Allowed Changed")
-        }
-        return result
-    }
-
-    private fun renamingAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val renameAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED
-            ) else false
-        val changeInValue = renameAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, renameAllowed).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Rename Allowed Changed")
-        }
-        return result
-    }
-
-    private fun cutCopyAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val cutCopyAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED
-            ) else false
-        val changeInValue = cutCopyAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, cutCopyAllowed)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Cut Copy Allowed Changed")
-        }
-        return result
-    }
-
-    private fun onDemandDownloadManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val onDemandDownload =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD
-            ) else false
-        val changeInValue = onDemandDownload != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, onDemandDownload)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "On Demand Download Changed")
-        }
-        return result
-    }
-
-    private fun esperAppStoreVisibilityManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val onDemandDownload =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY
-            ) else false
-        val changeInValue = onDemandDownload != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit().putBoolean(
-                Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, onDemandDownload
-            ).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Esper App Store Visibility Changed")
-        }
-        return result
-    }
-
-    private fun apiKeyManagedConfig(
-        context: Context,
-        appRestrictions: Bundle,
-        sharedPrefManaged: SharedPreferences,
-        triggeredFromService: Boolean
-    ): Boolean {
-        var result = false
-        val apiKey =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_API_KEY)) appRestrictions.getString(
-                Constants.SHARED_MANAGED_CONFIG_API_KEY
-            ) else null
-
-        val changeInValue =
-            apiKey != sharedPrefManaged.getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
-        if (changeInValue && apiKey.isNullOrEmpty()) {
-            sharedPrefManaged.edit().remove(Constants.SHARED_MANAGED_CONFIG_API_KEY).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "API Key Removed")
-        } else if (changeInValue) {
-            sharedPrefManaged.edit().putString(Constants.SHARED_MANAGED_CONFIG_API_KEY, apiKey)
-                .apply()
-            result = true
-            GeneralUtils.initSDK(sharedPrefManaged, context, triggeredFromService)
-            Log.i(Constants.ManagedConfigUtilsTag, "API Key Changed")
-        }
-        return result
-    }
-
-    private fun uploadContentManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val uploadContent =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT
-            ) else false
-        val changeInValue = uploadContent != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, uploadContent).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Upload Content Changed")
-        }
-        return result
-    }
-
-    private fun shareAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val shareAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED
-            ) else false
-        val changeInValue = shareAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED, shareAllowed).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Share Allowed Changed")
-        }
-        return result
-    }
-
-    private fun creationAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val creationAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CREATION_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CREATION_ALLOWED
-            ) else false
-        val changeInValue = creationAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_CREATION_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_CREATION_ALLOWED, creationAllowed)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Creation Allowed Changed")
-        }
-        return result
-    }
-
-    private fun addStorageManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val shareAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE
-            ) else false
-        val changeInValue = shareAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE, shareAllowed)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Add Storage Changed")
-        }
-        return result
-    }
-
-    private fun ftpAllowedManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val shareAllowed =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED
-            ) else false
-        val changeInValue = shareAllowed != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, shareAllowed)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "FTP Allowed Changed")
-        }
-        return result
-    }
-
-    private fun showDeviceDetailsManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val showDeviceDetails =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS
-            ) else false
-        val changeInValue = showDeviceDetails != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit()
-                .putBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, showDeviceDetails)
-                .apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Show Device Details Allowed Changed")
-        }
-        return result
-    }
-
-
-    private fun convertFilesToAppStoreManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val convertFilesToAppStore =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE
-            ) else false
-        val changeInValue = convertFilesToAppStore != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit().putBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_APP_STORE, convertFilesToAppStore
-            ).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To App Store Changed")
-        }
-        return result
-    }
-
-    private fun showNetworkTesterManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val showNetworkTester =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY
-            ) else false
-        val changeInValue = showNetworkTester != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit().putBoolean(
-                Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, showNetworkTester
-            ).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Network Tester Visibility Changed")
-        }
-        return result
-    }
-
-    private fun convertFilesToNetworkTesterManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val convertFilesToNetworkTester =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER
-            ) else false
-        val changeInValue = convertFilesToNetworkTester != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit().putBoolean(
-                Constants.SHARED_MANAGED_CONFIG_CONVERT_FILES_TO_NETWORK_TESTER,
-                convertFilesToNetworkTester
-            ).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Convert Files To Network Tester Changed")
-        }
-        return result
-    }
-
-    private fun useCustomTenantForNetworkTesterManagedConfig(
-        context: Context, appRestrictions: Bundle, sharedPrefManaged: SharedPreferences
-    ): Boolean {
-        var result = false
-        val useCustomTenant =
-            if (appRestrictions.containsKey(Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER)) appRestrictions.getBoolean(
-                Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER
-            ) else false
-        val changeInValue = useCustomTenant != sharedPrefManaged.getBoolean(
-            Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false
-        )
-        if (changeInValue) {
-            sharedPrefManaged.edit().putBoolean(
-                Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER,
-                useCustomTenant
-            ).apply()
-            result = true
-            Log.i(Constants.ManagedConfigUtilsTag, "Custom Tenant For Network Tester Changed")
-        }
-        return result
     }
 }

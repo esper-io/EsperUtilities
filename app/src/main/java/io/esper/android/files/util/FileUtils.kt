@@ -20,6 +20,7 @@ import io.esper.android.files.model.Item
 import io.esper.android.files.provider.archive.isArchivePath
 import io.esper.android.files.provider.linux.isLinuxPath
 import io.esper.android.files.util.Constants.FileUtilsTag
+import io.esper.android.files.util.Constants.GeneralUtilsTag
 import io.esper.android.files.util.UploadDownloadUtils.uploadFile
 import io.esper.android.service.LogCollectionService
 import io.esper.devicesdk.EsperDeviceSDK
@@ -37,7 +38,7 @@ object FileUtils {
         sharedPrefStorage.edit()
             .putString(Constants.ORIGINAL_SCREENSHOT_STORAGE_VALUE, mOriginalScreenshotPath).apply()
         if (!File(Constants.EsperScreenshotFolder).exists()) {
-            GeneralUtils.createDir(Constants.EsperScreenshotFolder)
+            createDir(Constants.EsperScreenshotFolder)
         }
         for (i in getDirectoryContents(File(mOriginalScreenshotPath), context)) {
             moveFile(File(i.path), File(Constants.EsperScreenshotFolder))
@@ -49,7 +50,7 @@ object FileUtils {
             moveFile(File(i.path), File(mUpdatedScreenshotPath))
         }
         if (File(Constants.EsperScreenshotFolder).exists()) {
-            GeneralUtils.deleteDir(Constants.EsperScreenshotFolder)
+            deleteDir(Constants.EsperScreenshotFolder)
         }
     }
 
@@ -120,7 +121,7 @@ object FileUtils {
     }
 
     fun createEsperFolder() {
-        GeneralUtils.getInternalStoragePath(application)?.let { GeneralUtils.createDirectory(it) }
+        GeneralUtils.getInternalStoragePath(application)?.let { createDir(it) }
     }
 
     fun deleteFile(filePath: String): Boolean {
@@ -386,7 +387,21 @@ object FileUtils {
     }
 
     fun createDir(mCurrentPath: String) {
-        val fileDirectory = File(mCurrentPath)
-        if (!fileDirectory.exists()) fileDirectory.mkdir()
+        try {
+            val fileDirectory = File(mCurrentPath)
+            if (!fileDirectory.exists()) {
+                fileDirectory.mkdirs()
+            }
+        } catch (e: Exception) {
+            Log.e(GeneralUtilsTag, "Error creating directory: $mCurrentPath", e)
+        }
+    }
+
+    fun deleteDir(path: String) {
+        Log.i(FileUtilsTag, "deleteDir: Deleting directory at $path")
+        val fileDirectory = File(path)
+        if (fileDirectory.exists()) {
+            fileDirectory.deleteRecursively()
+        }
     }
 }
