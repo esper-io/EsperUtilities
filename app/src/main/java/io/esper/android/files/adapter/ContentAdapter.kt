@@ -95,7 +95,7 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         holder.txtTitle.text = currentItem.name
         holder.txtInfo.text = formatFileSize(currentItem.size!!.toLong())
 
-        // Set download button and image based on conditions (simplified)
+        holder.downloadBtn.setOnClickListener{}
         holder.downloadBtn.setOnClickListener {
             if (GeneralUtils.hasActiveInternetConnection(mContext)) {
                 holder.downloadBtn.isEnabled = false

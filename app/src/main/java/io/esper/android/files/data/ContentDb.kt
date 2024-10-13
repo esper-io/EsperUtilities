@@ -26,7 +26,7 @@ abstract class ContentDb : RoomDatabase() {
         private fun buildDatabase(context: Context): ContentDb {
             return Room.databaseBuilder(
                 context.applicationContext, ContentDb::class.java, "ContentDb"
-            ).build()
+            ).fallbackToDestructiveMigration().build()
         }
     }
 }
