@@ -20,6 +20,7 @@ import io.esper.android.files.file.asFileSize
 import io.esper.android.files.filelist.AppStoreActivity
 import io.esper.android.files.filelist.DlcActivity
 import io.esper.android.files.ftpserver.FtpServerActivity
+import io.esper.android.files.provider.common.exists
 import io.esper.android.files.settings.Settings
 import io.esper.android.files.settings.SettingsActivity
 import io.esper.android.files.settings.StandardDirectoryListActivity
@@ -27,6 +28,7 @@ import io.esper.android.files.storage.AddStorageDialogActivity
 import io.esper.android.files.storage.FileSystemRoot
 import io.esper.android.files.storage.Storage
 import io.esper.android.files.storage.StorageVolumeListLiveData
+import io.esper.android.files.util.FileUtils
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.files.util.createIntent
 import io.esper.android.files.util.isMounted
@@ -75,6 +77,9 @@ private abstract class PathItem(val path: Path) : NavigationItem() {
     override fun onClick(listener: Listener) {
         if (this is NavigationRoot) {
             listener.navigateToRoot(path)
+            if (!path.exists()) {
+                FileUtils.createDir(path.toAbsolutePath().toString())
+            }
         } else {
             listener.navigateTo(path)
         }
@@ -140,7 +145,8 @@ private val storageVolumeItems: List<NavigationItem>
 
 private class StorageVolumeItem(
     private val storageVolume: StorageVolume
-) : PathItem(Paths.get(storageVolume.pathCompat)), NavigationRoot {
+) : PathItem(Paths.get(storageVolume.pathCompat + GeneralUtils.getExternalStoragePath(application))),
+    NavigationRoot {
     override val id: Long
         get() = storageVolume.hashCode().toLong()
 

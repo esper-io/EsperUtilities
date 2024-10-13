@@ -14,7 +14,7 @@ object Constants {
     var InternalDownloadFolder: File? =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-    var ExternalRootFolder: String = "esperfiles" + File.separator
+    var ExternalRootFolderExt: String = File.separator + "esperfiles" + File.separator
 
     var InternalScreenshotFolderDCIM: String =
         Environment.getExternalStorageDirectory().path + File.separator + "DCIM" + File.separator + "Screenshots" + File.separator

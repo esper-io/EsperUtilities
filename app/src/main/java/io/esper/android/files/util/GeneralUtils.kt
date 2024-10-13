@@ -1,18 +1,12 @@
-@file:Suppress("DEPRECATION")
-
 package io.esper.android.files.util
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
-import android.os.Handler
-import android.os.Looper
+import android.net.NetworkCapabilities
 import android.os.StrictMode
-import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -27,8 +21,6 @@ import com.google.android.material.textfield.TextInputLayout
 import io.esper.android.files.BuildConfig
 import io.esper.android.files.R
 import io.esper.android.files.app.application
-import io.esper.android.files.filelist.FileListActivity
-import io.esper.android.files.filelist.FileListFragment
 import io.esper.android.files.util.Constants.GeneralUtilsTag
 import io.esper.devicesdk.EsperDeviceSDK
 import io.esper.devicesdk.models.EsperDeviceInfo
@@ -39,81 +31,51 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
-import java.io.File
 import java.io.IOException
-import java.lang.Thread.sleep
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import java.util.Locale
 
 object GeneralUtils {
-    fun createDir(mCurrentPath: String) {
-        val fileDirectory = File(mCurrentPath)
-        if (!fileDirectory.exists()) fileDirectory.mkdir()
-    }
-
-    fun deleteDir(mCurrentPath: String) {
-        Log.i(GeneralUtilsTag, "deleteDir: Deleting directory")
-        val fileDirectory = File(mCurrentPath)
-        if (fileDirectory.exists()) fileDirectory.deleteRecursively()
-    }
-
-    fun hideKeyboard(activity: Activity) {
-        val imm = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-        var view = activity.currentFocus
-        if (view == null) view = View(activity)
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
     fun hideKeyboard(context: Context) {
-        val imm = context.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-        var view = context.activity?.currentFocus
-        if (view == null) view = View(context)
+        val imm =
+            context.activity?.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        val view = context.activity?.currentFocus ?: View(context.activity)
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    fun setFadeAnimation(view: View) {
+    fun setFadeAnimation(view: View, duration: Long = 300L) {
         val anim = AlphaAnimation(0.0f, 1.0f)
-        anim.duration = 300
+        anim.duration = duration
         view.startAnimation(anim)
     }
 
     fun hasActiveInternetConnection(context: Context): Boolean {
-        var isConnected = false
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val activeNetwork: NetworkInfo? = connectivityManager.activeNetworkInfo
-        if (activeNetwork != null && activeNetwork.isConnected) {
-            isConnected = true
-        }
-        return isConnected
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-    fun calculateNoOfColumns(
-        context: Context, columnWidthDp: Float
-    ): Int {
+    fun calculateNoOfColumns(context: Context, columnWidthDp: Float): Int {
         val displayMetrics = context.resources.displayMetrics
         val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
         return (screenWidthDp / columnWidthDp + 0.5).toInt()
     }
 
-    @SuppressLint("SimpleDateFormat")
-    fun getCurrentDateTime(): String? {
-        val dateFormat: DateFormat = SimpleDateFormat("ddMMyyHHmm")
-        val date = Date()
-        return dateFormat.format(date)
+    fun getCurrentDateTime(pattern: String = "ddMMyyHHmm"): String {
+        return SimpleDateFormat(pattern, Locale.getDefault()).format(Date())
     }
 
     private fun startEsperSDKActivation(
-        context: Context, sharedPrefManaged: SharedPreferences?, triggeredFromService: Boolean
+        context: Context, sharedPrefManaged: SharedPreferences, triggeredFromService: Boolean
     ) {
-        val token = sharedPrefManaged!!.getString(
+        val token = sharedPrefManaged.getString(
             Constants.SHARED_MANAGED_CONFIG_API_KEY, null
         )
         val existingDeviceName = getDeviceName(context)
-        if (token != null && TextUtils.isEmpty(existingDeviceName)) {
-            Log.i(GeneralUtilsTag, "initSDK: Initializing SDK")
+        if (!token.isNullOrEmpty() && existingDeviceName.isNullOrEmpty()) {
             val sdk = getEsperSDK(context)
             sdk.activateSDK(token, object : EsperDeviceSDK.Callback<Void?> {
                 override fun onResponse(response: Void?) {
@@ -122,48 +84,46 @@ object GeneralUtils {
                 }
 
                 override fun onFailure(t: Throwable) {
-                    Log.d(
-                        GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
-                    )
+                    Log.e(GeneralUtilsTag, "SDK activation failed: ${t.message}", t)
                 }
             })
         }
     }
 
     fun isAddingStorageAllowed(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ADD_STORAGE, false
+        )
     }
 
     fun isDlcAllowed(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_ON_DEMAND_DOWNLOAD, false
+        )
     }
 
     fun isEsperAppStoreVisible(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_ESPER_APP_STORE_VISIBILITY, false
+        )
     }
 
     fun isFtpServerAllowed(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_EXTERNAL_FTP_ALLOWED, false
+        )
     }
 
     fun isNetworkTesterVisible(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_NETWORK_TESTER_VISIBILITY, false
+        )
     }
 
     fun showDeviceDetails(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_SHOW_DEVICE_DETAILS, false
+        )
     }
 
     private fun getProvisioningInfo(
@@ -174,16 +134,12 @@ object GeneralUtils {
     ) {
         sdk.getProvisionInfo(object : EsperDeviceSDK.Callback<ProvisionInfo> {
             override fun onResponse(response: ProvisionInfo?) {
-                if (!response?.apiEndpoint.isNullOrEmpty()) {
-                    val tenant = response?.apiEndpoint
-                    sharedPrefManaged.edit()
-                        .putString(Constants.SHARED_MANAGED_CONFIG_TENANT, tenant).apply()
-                }
-                if (!response?.tenantUUID.isNullOrEmpty()) {
-                    val enterpriseId = response?.tenantUUID
-                    sharedPrefManaged.edit()
-                        .putString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, enterpriseId)
-                        .apply()
+                response?.let {
+                    sharedPrefManaged.edit().apply {
+                        putString(Constants.SHARED_MANAGED_CONFIG_TENANT, it.apiEndpoint)
+                        putString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, it.tenantUUID)
+                        apply()
+                    }
                 }
                 if (!triggeredFromService) {
                     triggerRebirth(context)
@@ -191,62 +147,38 @@ object GeneralUtils {
             }
 
             override fun onFailure(t: Throwable) {
-                Log.d(
-                    GeneralUtilsTag, "getProvisionInfo: Callback.onFailure: message : " + t.message
-                )
+                Log.e(GeneralUtilsTag, "Failed to get provisioning info: ${t.message}", t)
             }
         })
     }
 
-    private fun getDeviceDetails(sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences?) {
+    private fun getDeviceDetails(sdk: EsperDeviceSDK, sharedPrefManaged: SharedPreferences) {
         sdk.getEsperDeviceInfo(object : EsperDeviceSDK.Callback<EsperDeviceInfo> {
-
             override fun onFailure(t: Throwable) {
-                Log.d(
-                    GeneralUtilsTag,
-                    "getEsperDeviceInfo: Callback.onFailure: message : " + t.message
-                )
+                Log.e(GeneralUtilsTag, "Failed to get device info: ${t.message}", t)
             }
 
             override fun onResponse(esperDeviceInfo: EsperDeviceInfo?) {
-                if (!esperDeviceInfo?.deviceId.isNullOrEmpty()) {
-                    val deviceId = esperDeviceInfo?.deviceId
-                    sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_NAME, deviceId
-                    )?.apply()
-                }
-                if (!esperDeviceInfo?.serialNo.isNullOrEmpty()) {
-                    val serialNo = esperDeviceInfo?.serialNo
-                    sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_SERIAL, serialNo
-                    )?.apply()
-                }
-                if (!esperDeviceInfo?.imei1.isNullOrEmpty()) {
-                    val imei1 = esperDeviceInfo?.imei1
-                    sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_IMEI1, imei1
-                    )?.apply()
-                }
-                if (!esperDeviceInfo?.imei2.isNullOrEmpty()) {
-                    val deviceId = esperDeviceInfo?.imei2
-                    sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_IMEI2, deviceId
-                    )?.apply()
-                }
-                if (!esperDeviceInfo?.uuid.isNullOrEmpty()) {
-                    val deviceId = esperDeviceInfo?.uuid
-                    sharedPrefManaged?.edit()?.putString(
-                        Constants.ESPER_DEVICE_UUID, deviceId
-                    )?.apply()
+                esperDeviceInfo?.let {
+                    sharedPrefManaged.edit().apply {
+                        putString(Constants.ESPER_DEVICE_NAME, it.deviceId)
+                        putString(Constants.ESPER_DEVICE_SERIAL, it.serialNo)
+                        putString(Constants.ESPER_DEVICE_IMEI1, it.imei1)
+                        putString(Constants.ESPER_DEVICE_IMEI2, it.imei2)
+                        putString(Constants.ESPER_DEVICE_UUID, it.uuid)
+                        apply()
+                    }
                 }
             }
         })
     }
 
-    fun getExternalStoragePath(sharedPrefManaged: SharedPreferences): String? {
-        return sharedPrefManaged.getString(
-            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH, Constants.ExternalRootFolder
-        )!!
+    fun getExternalStoragePath(context: Context): String? {
+        return getStringPreference(
+            context,
+            Constants.SHARED_MANAGED_CONFIG_EXTERNAL_ROOT_PATH,
+            Constants.ExternalRootFolderExt
+        )
     }
 
     fun setExternalStoragePath(sharedPrefManaged: SharedPreferences, path: String) {
@@ -259,77 +191,56 @@ object GeneralUtils {
     }
 
     fun getInternalStoragePath(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(
-            Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, Constants.InternalRootFolder
+        return getStringPreference(
+            context,
+            Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH,
+            Constants.InternalRootFolder
         )
     }
 
     fun setInternalStoragePath(context: Context, path: String) {
-        context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
-            .edit().putString(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, path).apply()
+        context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit().putString(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH, path).apply()
     }
 
     fun removeInternalStoragePath(context: Context) {
-        context.getSharedPreferences(Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE)
-            .edit().remove(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH).apply()
-
+        context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit().remove(Constants.SHARED_MANAGED_CONFIG_INTERNAL_ROOT_PATH).apply()
     }
 
     fun initNetworkConfigs() {
-        //Used for Glide Image Loader
         val builder = StrictMode.VmPolicy.Builder()
         StrictMode.setVmPolicy(builder.build())
     }
 
     fun restart(context: Context) {
         context.activity?.finish()
-        val intent = context.activity?.intent?.let {
-            FileListFragment.Args(
-                it
-            )
-        }?.let {
-            FileListActivity::class.createIntent().putArgs(
-                it
-            )
-        }
-        intent?.let { context.startActivitySafe(it) }
+        val intent = context.activity?.intent
+        context.activity?.startActivity(intent)
         context.activity?.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
+//    fun triggerRebirth(context: Context) {
+//        Log.i(GeneralUtilsTag, "triggerRebirth: Restarting app")
+//        val packageManager = context.packageManager
+//        val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+//        val componentName = intent?.component
+//        val mainIntent = Intent.makeRestartActivityTask(componentName).apply {
+//            setPackage(context.packageName)
+//        }
+//        context.startActivity(mainIntent)
+//        Runtime.getRuntime().exit(0)
+//    }
+
     fun triggerRebirth(context: Context) {
-        Log.i(GeneralUtilsTag, "triggerRebirth: Restarting app")
-        sleep(1000)
         val packageManager = context.packageManager
         val intent = packageManager.getLaunchIntentForPackage(context.packageName)
-        val componentName = intent!!.component
+        val componentName = intent?.component
         val mainIntent = Intent.makeRestartActivityTask(componentName)
-        // Required for API 34 and later
-        // Ref: https://developer.android.com/about/versions/14/behavior-changes-14#safer-intents
-        mainIntent.setPackage(context.packageName)
         context.startActivity(mainIntent)
         Runtime.getRuntime().exit(0)
-    }
-
-
-    private fun clearCache(context: Context) {
-        // Clear cache directory
-        val cacheDir = context.cacheDir
-        cacheDir?.let { deleteDir(it) }
-    }
-
-    private fun deleteDir(dir: File): Boolean {
-        if (dir.isDirectory) {
-            val children = dir.list()
-            children?.forEach { fileName ->
-                val success = deleteDir(File(dir, fileName))
-                if (!success) {
-                    return false
-                }
-            }
-        }
-        return dir.delete()
     }
 
     fun initSDK(
@@ -347,55 +258,50 @@ object GeneralUtils {
     fun isEsperDeviceSDKActivated(context: Context, callback: (Boolean) -> Unit) {
         getEsperSDK(context).isActivated(object : EsperDeviceSDK.Callback<Boolean> {
             override fun onResponse(response: Boolean?) {
-                response?.let {
-                    callback(it)
-                }
+                callback(response == true)
             }
 
             override fun onFailure(t: Throwable) {
-                Log.d(
-                    GeneralUtilsTag, "activateSDK: Callback.onFailure: message : " + t.message
-                )
-                // Call the callback with a default value or handle failure case as needed
+                Log.e(GeneralUtilsTag, "SDK activation check failed: ${t.message}", t)
                 callback(false)
             }
         })
     }
 
     fun getDeviceName(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.ESPER_DEVICE_NAME, null)
+        return getStringPreference(
+            context, Constants.ESPER_DEVICE_NAME, null
+        )
     }
 
     fun getDeviceSerial(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.ESPER_DEVICE_SERIAL, null)
+        return getStringPreference(
+            context, Constants.ESPER_DEVICE_SERIAL, null
+        )
     }
 
     fun getApiKey(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.SHARED_MANAGED_CONFIG_API_KEY, null)
+        return getStringPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_API_KEY, null
+        )
     }
 
     fun getEnterpriseId(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, null)
+        return getStringPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_ENTERPRISE_ID, null
+        )
     }
 
     fun getTenant(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.SHARED_MANAGED_CONFIG_TENANT, null)
+        return getStringPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_TENANT, null
+        )
     }
 
     fun getDeviceUUID(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.ESPER_DEVICE_UUID, null)
+        return getStringPreference(
+            context, Constants.ESPER_DEVICE_UUID, null
+        )
     }
 
     fun showNoInternetDialog(context: Context, finishActivity: Boolean = false) {
@@ -429,12 +335,11 @@ object GeneralUtils {
             .setCancelable(false).setPositiveButton("OK") { dialog, _ ->
                 val tenantInput = editText.text.toString()
                 val isChecked = checkBox.isChecked
-                // Pass the input to the callback
                 onInputReceived(tenantInput, isChecked)
                 dialog.dismiss()
             }.setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
-                context.activity?.finish()
+                (context as? Activity)?.finish()
             }.show()
     }
 
@@ -446,49 +351,40 @@ object GeneralUtils {
     }
 
     fun getTenantForNetworkTester(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER, null)
+        return getStringPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_TENANT_FOR_NETWORK_TESTER, null
+        )
     }
 
     fun getTargetFromUrl(url: String): String? {
-        val parts = url.split(".")
-        if (parts.isNotEmpty()) {
-            val subdomain = parts[0].replace("https://", "")
-            if (subdomain.contains("-")) {
-                return subdomain.split("-")[0]
-            }
-            return subdomain
-        }
-        return null
+        return url.split(".").firstOrNull()?.replace("https://", "")?.split("-")?.firstOrNull()
     }
 
     fun setStreamerAvailability(context: Context, isAvailable: Boolean) {
-        context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).edit()
-            .putBoolean(Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, isAvailable)
-            .apply()
+        setBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, isAvailable
+        )
     }
 
     fun isStreamerAvailable(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, false)
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_STREAMER_FOR_NETWORK_TESTER, false
+        )
     }
 
-    fun setBaseStackName(requireContext: Context, baseStackName: String?) {
-        requireContext.getSharedPreferences(
+    fun setBaseStackName(context: Context, baseStackName: String?) {
+        context.getSharedPreferences(
             Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).edit()
-            .putString(Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, baseStackName)
-            .apply()
+        ).edit().putString(
+            Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER,
+            baseStackName?.lowercase()
+        ).apply()
     }
 
     fun getBaseStackName(context: Context): String? {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getString(Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, null)
+        return getStringPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_BASE_STACK_FOR_NETWORK_TESTER, null
+        )
     }
 
     fun fetchAndStoreBaseStackName(
@@ -500,57 +396,37 @@ object GeneralUtils {
         val request = Request.Builder().url(url)
             .addHeader("authorization", BuildConfig.MISSION_CONTROL_API_KEY).build()
 
-        // Show loading dialog using MaterialAlertDialogBuilder
         val progressDialog = showMaterialLoadingDialog(context)
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace()
-                Handler(Looper.getMainLooper()).post {
-                    dismissMaterialLoadingDialog(progressDialog)
-                    callback.onError(e)
-                }
+                dismissMaterialLoadingDialog(progressDialog)
+                callback.onError(e)
             }
 
             override fun onResponse(call: Call, response: Response) {
-                response.use {
-                    Handler(Looper.getMainLooper()).post {
-                        dismissMaterialLoadingDialog(progressDialog)
-                    }
+                dismissMaterialLoadingDialog(progressDialog)
+                if (!response.isSuccessful) {
+                    callback.onError(IOException("Unexpected code $response"))
+                    return
+                }
 
-                    if (!response.isSuccessful) {
-                        Handler(Looper.getMainLooper()).post {
-                            callback.onError(IOException("Unexpected code $response"))
-                        }
-                        return
-                    }
+                val responseBody = response.body?.string()
+                if (responseBody != null) {
+                    val jsonObject = JSONObject(responseBody)
+                    val dataArray = jsonObject.getJSONArray("data")
+                    if (dataArray.length() > 0) {
+                        val firstObject = dataArray.getJSONObject(0)
+                        val baseStackObject = firstObject.getJSONObject("baseStack")
+                        val baseStackName = baseStackObject.getString("name")
 
-                    val responseBody = response.body?.string()
-                    if (responseBody != null) {
-                        val jsonObject = JSONObject(responseBody)
-                        val dataArray = jsonObject.getJSONArray("data")
-                        if (dataArray.length() > 0) {
-                            val firstObject = dataArray.getJSONObject(0)
-                            val baseStackObject = firstObject.getJSONObject("baseStack")
-                            val baseStackName = baseStackObject.getString("name")
-
-                            // Store the base stack name in shared preferences
-                            setBaseStackName(context, baseStackName.toLowerCase())
-
-                            // Notify the fragment with the fetched base stack name
-                            Handler(Looper.getMainLooper()).post {
-                                callback.onBaseStackNameFetched(baseStackName)
-                            }
-                        } else {
-                            Handler(Looper.getMainLooper()).post {
-                                callback.onError(IOException("No data found"))
-                            }
-                        }
+                        setBaseStackName(context, baseStackName)
+                        callback.onBaseStackNameFetched(baseStackName)
                     } else {
-                        Handler(Looper.getMainLooper()).post {
-                            callback.onError(IOException("Empty response body"))
-                        }
+                        callback.onError(IOException("No data found"))
                     }
+                } else {
+                    callback.onError(IOException("Empty response body"))
                 }
             }
         })
@@ -572,12 +448,7 @@ object GeneralUtils {
             .setMessage("Please enter your tenant's stack name (if you know), else press Cancel to skip.")
             .setView(layout).setCancelable(false).setPositiveButton("OK") { dialog, _ ->
                 val tenantInput = editText.text.toString()
-                // Pass the input to the callback
-                if (tenantInput.isNotEmpty()) {
-                    onInputReceived(tenantInput)
-                } else {
-                    onInputReceived(null)
-                }
+                onInputReceived(if (tenantInput.isNotEmpty()) tenantInput else null)
                 dialog.dismiss()
             }.setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
@@ -596,60 +467,73 @@ object GeneralUtils {
     }
 
     fun useCustomTenantForNetworkTester(context: Context): Boolean {
-        return context.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false)
-    }
-
-    fun createDirectory(path: String) {
-        try {
-            val fileDirectory = File(path)
-            if (!fileDirectory.exists()) {
-                fileDirectory.mkdir()
-            }
-        } catch (e: Exception) {
-            Log.e(GeneralUtilsTag, "Error creating directory: $path", e)
-        }
+        return getBooleanPreference(
+            context, Constants.SHARED_MANAGED_CONFIG_USE_CUSTOM_TENANT_FOR_NETWORK_TESTER, false
+        )
     }
 
     fun isDeletionAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_DELETION_ALLOWED, false
+        )
     }
 
     fun isArchiveAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_ARCHIVE_ALLOWED, false
+        )
     }
 
     fun isRenameAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_RENAME_ALLOWED, false
+        )
     }
 
     fun isSharingAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_SHARING_ALLOWED, false
+        )
     }
 
     fun isUploadContentAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_UPLOAD_CONTENT, false
+        )
     }
 
     fun isCutCopyAllowed(): Boolean {
-        return application.getSharedPreferences(
-            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
-        ).getBoolean(Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, false)
+        return getBooleanPreference(
+            application, Constants.SHARED_MANAGED_CONFIG_CUT_COPY_ALLOWED, false
+        )
     }
 
     interface BaseStackNameCallback {
         fun onBaseStackNameFetched(baseStackName: String)
         fun onError(e: Exception)
+    }
+
+    private fun getBooleanPreference(
+        context: Context, key: String, defaultValue: Boolean
+    ): Boolean {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getBoolean(key, defaultValue)
+    }
+
+    private fun setBooleanPreference(
+        context: Context, key: String, value: Boolean
+    ) {
+        context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).edit().putBoolean(key, value).apply()
+    }
+
+    private fun getStringPreference(
+        context: Context, key: String, defaultValue: String?
+    ): String? {
+        return context.getSharedPreferences(
+            Constants.SHARED_MANAGED_CONFIG_VALUES, Context.MODE_PRIVATE
+        ).getString(key, defaultValue)
     }
 }
