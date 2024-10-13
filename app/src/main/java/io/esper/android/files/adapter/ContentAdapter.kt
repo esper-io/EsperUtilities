@@ -85,8 +85,8 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
             holder.imgThumbnail.setImageResource(drawableResource)
         } else {
             if (currentItem.kind?.contains("image", true) == true) {
-                val isGif = currentItem.kind!!.contains(".gif", true)
-                loadImage(mContext, currentItem.download_url.toString(), isGif, holder.imgThumbnail)
+                val isGif = currentItem.kind.contains(".gif", true)
+                loadImage(mContext, currentItem.downloadUrl.toString(), isGif, holder.imgThumbnail)
             } else {
                 holder.imgThumbnail.setImageResource(R.drawable.file)
             }
@@ -165,6 +165,7 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
 
     @SuppressLint("NotifyDataSetChanged")
     fun setContentItems(context: Context, contentItems: MutableList<AllContent>?) {
+        mContext = context
         this.mItemContentList = contentItems ?: mutableListOf()
         this.mItemContentListOriginal = ArrayList(this.mItemContentList)
         sharedPrefManaged = context.getSharedPreferences(
@@ -173,6 +174,20 @@ class ContentAdapter : RecyclerView.Adapter<ContentAdapter.MyViewHolder>(), Filt
         sharedPrefManaged.getBoolean(Constants.SORT_ASCENDING, true).let {
             sortItems(it)
         }
+        notifyDataSetChanged()
+    }
+
+    fun addItems(newItems: List<AllContent>) {
+        val startPosition = mItemContentList.size
+        mItemContentList.addAll(newItems)
+        mItemContentListOriginal = ArrayList(mItemContentList)
+        notifyItemRangeInserted(startPosition, newItems.size)
+    }
+
+    fun clearItems() {
+        mItemContentList.clear()
+        mItemContentListOriginal.clear()
+        notifyDataSetChanged()
     }
 
     fun sortItems(ascending: Boolean) {

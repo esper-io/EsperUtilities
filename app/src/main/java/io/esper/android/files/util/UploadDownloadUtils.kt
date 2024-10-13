@@ -35,13 +35,13 @@ object UploadDownloadUtils {
                 // If a file with the same name already exists, rename it
                 val newFileName = getUniqueFileName(internalStoragePath, downloadFileName)
                 FileDownloadManager.initDownload(
-                    mContext, currentItem.download_url.toString(), internalStoragePath, newFileName
+                    mContext, currentItem.downloadUrl.toString(), internalStoragePath, newFileName
                 )
             } else {
                 // If the file doesn't exist, proceed with downloading without renaming
                 FileDownloadManager.initDownload(
                     mContext,
-                    currentItem.download_url.toString(),
+                    currentItem.downloadUrl.toString(),
                     internalStoragePath,
                     downloadFileName
                 )

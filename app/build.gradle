@@ -34,6 +34,11 @@ android {
                 arguments '-DANDROID_STL=none'
             }
         }
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
         buildConfigField "String", "MISSION_CONTROL_API_KEY", "\"82366173-a275-4dab-8955-50a4d44b79a7\""
     }
     buildFeatures {
