@@ -1,18 +1,30 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
-apply { plugin 'kotlin-kapt' }
+apply plugin: 'kotlin-kapt'
 
-apply from: '../signing.gradle'
-
-//#ifdef NONFREE
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
 }
-//#endif
+
+// Define manual version components
+def vMajor = 1
+def vMinor = 1
+
+// Retrieve the build number from environment variable, default to 0 if not set
+def vBuild = System.getenv("BUILD_NUMBER")?.toInteger() ?: 0
+
+def signingPropertiesFile = rootProject.file('signing.properties')
+def signingProperties = new Properties()
+
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { props ->
+        signingProperties.load(props)
+    }
+}
 
 android {
     namespace 'io.esper.android.files'
@@ -23,8 +35,11 @@ android {
         applicationId 'io.esper.android.files'
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName '1.0.0'
+
+        // Calculate versionCode and versionName based on vMajor, vMinor, and vBuild
+        versionCode vMajor * 1000000 + vMinor * 10000 + vBuild
+        versionName "${vMajor}.${String.format('%02d', vMinor)}.${String.format('%04d', vBuild)}"
+
         resValue 'string', 'app_version', versionName + ' (' + versionCode + ')'
         buildConfigField 'String', 'FILE_PROVIDIER_AUTHORITY', 'APPLICATION_ID + ".file_provider"'
         resValue 'string', 'app_provider_authority', applicationId + '.app_provider'
@@ -50,11 +65,11 @@ android {
         generateLocaleConfig true
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
     externalNativeBuild {
         cmake {
@@ -66,10 +81,20 @@ android {
         // Referenced from org.apache.mina.proxy.ProxyAuthException."
         warning 'InvalidPackage', 'MissingTranslation'
     }
+    signingConfigs {
+        release {
+            if (signingProperties.containsKey('storeFile')) {
+                storeFile file(signingProperties['storeFile'])
+                storePassword signingProperties['storePassword']
+                keyAlias signingProperties['keyAlias']
+                keyPassword signingProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -87,6 +112,23 @@ android {
         language {
             enableSplit = false
         }
+    }
+}
+
+// Define `versionName` at configuration time
+def extractedVersionName = android.defaultConfig.versionName
+
+// Path to versionName output file
+def versionNameOutputFile = new File(buildDir, "versionName.txt")
+
+tasks.register("writeVersionNameToFile") {
+    group = "verification"
+    description = "Writes the version name to a file."
+
+    // Ensure the build directory exists and then write the version name
+    doFirst {
+        versionNameOutputFile.parentFile.mkdirs() // Ensure the directory exists
+        versionNameOutputFile.text = extractedVersionName
     }
 }
 
@@ -214,7 +256,7 @@ dependencies {
     kapt 'android.arch.persistence.room:compiler:1.1.1'
 
     implementation 'com.github.bumptech.glide:glide:4.15.1'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.13.0'
+    kapt 'com.github.bumptech.glide:compiler:4.13.0'
 
     implementation 'com.github.andrefrsousa:SuperBottomSheet:2.0.0'
     implementation 'com.github.Ferfalk:SimpleSearchView:0.2.0'
@@ -222,8 +264,8 @@ dependencies {
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
     implementation 'com.github.naumanmir:filedownloadservice:1.2'
     implementation 'com.ixuea:android-downloader:3.0.1'
-    implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
-    implementation 'com.mindorks.android:prdownloader:0.6.0'
+    implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.3'
+    implementation 'com.github.amitshekhariitbhu:PRDownloader:1.0.1'
     implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
 
     implementation "androidx.work:work-runtime-ktx:2.9.1"

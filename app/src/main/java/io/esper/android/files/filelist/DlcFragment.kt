@@ -62,7 +62,7 @@ class DlcFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        dlcViewModel.allContent.observe(viewLifecycleOwner, { contentList ->
+        dlcViewModel.allContent.observe(viewLifecycleOwner) { contentList ->
             if (contentList.isNotEmpty()) {
                 binding.toolbar.subtitle = "${contentList.size} files"
                 mContentAdapter?.setContentItems(requireContext(), contentList.toMutableList())
@@ -73,15 +73,15 @@ class DlcFragment : Fragment() {
                 setEmptyViewVisibility(View.VISIBLE)
                 setRecyclerViewVisibility(View.GONE)
             }
-        })
+        }
 
-        dlcViewModel.isLoading.observe(viewLifecycleOwner, { isLoading ->
+        dlcViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading) {
                 startRefreshAnim()
             } else {
                 stopRefreshAnim()
             }
-        })
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

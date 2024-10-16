@@ -20,8 +20,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        jcenter()
-        maven { url "https://jitpack.io" }
         maven {
             url "https://artifact.esper.io/artifactory/esper-device-sdk/"
         }
