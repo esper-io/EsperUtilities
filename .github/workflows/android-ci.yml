@@ -81,17 +81,29 @@ jobs:
         if: env.skip_build != 'true'
         run: chmod +x ./gradlew
         
+            # Ensure versionName is set correctly
+      - name: Debug versionName
+        run: |
+          echo "versionName=${{ env.versionName }}"
+
+      # Step: Check and Delete Existing Release
       - name: Check and Delete Existing Release
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_NAME: ${{ env.versionName }} # Explicitly pass versionName as an environment variable
         with:
           script: |
-            const tagName = `v${process.env.versionName}`;  // Correctly set tagName using versionName
+            const tagName = `v${process.env.VERSION_NAME}`; // Use the explicitly set VERSION_NAME
+            console.log(`Attempting to delete release with tag: ${tagName}`);
+            
+            // Fetch releases
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
+            
+            // Find existing release by tag
             const existingRelease = releases.data.find(release => release.tag_name === tagName);
             if (existingRelease) {
               console.log(`Release with tag ${tagName} exists. Deleting...`);
@@ -104,7 +116,7 @@ jobs:
               console.log(`No release found with tag ${tagName}.`);
             }
 
-            // Check and delete the tag if it exists
+            // Attempt to delete the tag reference
             try {
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
@@ -119,6 +131,7 @@ jobs:
                 throw error;
               }
             }
+
             
       - name: Write Version Name to File
         if: env.skip_build != 'true'
