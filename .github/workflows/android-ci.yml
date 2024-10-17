@@ -80,7 +80,11 @@ jobs:
       - name: Read App Version
         if: env.skip_build != 'true'
         run: |
-          VERSION_NAME=$(cat app/build/versionName.txt)
+          if [[ -f app/build/versionName.txt ]]; then
+            VERSION_NAME=$(cat app/build/versionName.txt)
+          else
+            VERSION_NAME="1.01.0000"
+          fi
           echo "versionName=$VERSION_NAME" >> $GITHUB_ENV
 
       - name: Calculate BUILD_NUMBER
@@ -89,7 +93,7 @@ jobs:
         run: |
           # Get the latest tag following the format vX.XX.XXXX
           latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
-    
+
           # Extract the build number from the tag (last part after the last '.')
           latest_build_number=$(echo "$latest_tag" | awk -F '.' '{print $NF}')
           # Increment the build number
@@ -122,7 +126,6 @@ jobs:
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
-      # Collect recent commit messages for release notes
       - name: Collect Release Notes
         id: release_notes
         if: env.skip_build != 'true'
@@ -130,10 +133,31 @@ jobs:
           RECENT_COMMITS=$(git log -5 --pretty=format:"- %s")
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
-      - name: Create GitHub Release
+      - name: Check if Release Tag Exists
+        id: check_tag
+        uses: actions/github-script@v6
         if: env.skip_build != 'true'
-        id: create_release
+        with:
+          script: |
+            try {
+              const release = await github.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: `v${{ env.versionName }}`
+              });
+              core.setOutput("exists", true);
+            } catch (error) {
+              if (error.status === 404) {
+                core.setOutput("exists", false);
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Create or Update GitHub Release
+        if: env.skip_build != 'true'
         uses: actions/create-release@v1
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
