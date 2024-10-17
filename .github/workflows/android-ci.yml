@@ -96,8 +96,8 @@ jobs:
                 throw error;
               }
             }
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 7: Write the version name to a file
       - name: Write Version Name to File
