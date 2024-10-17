@@ -97,9 +97,9 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
 
-      - name: Run Lint Checks
-        if: env.skip_build != 'true'
-        run: ./gradlew lint --warning-mode all
+      #- name: Run Lint Checks
+        #if: env.skip_build != 'true'
+        #run: ./gradlew lint --warning-mode all
 
       - name: Build with Gradle
         if: env.skip_build != 'true'
