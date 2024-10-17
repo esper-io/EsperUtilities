@@ -68,6 +68,7 @@ object GeneralUtils {
         }
     }
 
+    // Not required for now.
     fun calculateNoOfColumns(context: Context, columnWidthDp: Float): Int {
         val displayMetrics = context.resources.displayMetrics
         val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
