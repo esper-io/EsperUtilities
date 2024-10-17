@@ -1,4 +1,4 @@
-name: Check and Delete Existing Release
+name: Android CI
 
 on:
   push:
@@ -6,58 +6,177 @@ on:
       - master
 
 jobs:
-  check_and_delete_release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out repository with all history and tags
+      # Step 1: Check out repository
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch all history for all branches and tags
+          submodules: true
 
-      - name: Fetch all tags
-        run: git fetch --tags
+      # Step 2: Cache Gradle packages (if not skipping)
+      - name: Cache Gradle packages
+        if: env.skip_build != 'true'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper/
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
-      # Step 2: Calculate BUILD_NUMBER based on latest tag
+      # Step 3: Check commit message
+      - name: Check commit message
+        id: check_commit
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MESSAGE"
+          if [[ "$COMMIT_MESSAGE" == "Increment versionCode to "* ]]; then
+            echo "skip_build=true" >> $GITHUB_ENV
+          else
+            echo "skip_build=false" >> $GITHUB_ENV
+          fi
+
+      # Step 4: Set up Java 17
+      - name: Set up Java 17
+        if: env.skip_build != 'true'
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Step 5: Set up Android SDK and NDK
+      - name: Set up Android SDK and NDK
+        if: env.skip_build != 'true'
+        uses: android-actions/setup-android@v2
+        with:
+          sdk-version: '33.0.0'
+          ndk-version: '27.0.11718014'
+          distribution-type: 'sdk'
+          build-tools: '33.0.0'
+
+      # Step 6: Check if the release tag already exists and delete if necessary
+      - name: Check and delete existing tag and release
+        id: check_release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tagName = "v${{ env.versionName }}";
+            try {
+              // Try to get the release by tag name
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tagName,
+              });
+              
+              // If it exists, delete the release
+              if (release) {
+                console.log(`Deleting existing release with tag: ${tagName}`);
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.data.id,
+                });
+
+                // Also delete the tag itself
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `tags/${tagName}`,
+                });
+              }
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`Release with tag ${tagName} does not exist, proceeding.`);
+              } else {
+                throw error;
+              }
+            }
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 7: Write the version name to a file
+      - name: Write Version Name to File
+        if: env.skip_build != 'true'
+        run: ./gradlew writeVersionNameToFile
+
+      # Step 8: Read App Version
+      - name: Read App Version
+        if: env.skip_build != 'true'
+        run: |
+          VERSION_NAME=$(cat app/build/versionName.txt)
+          echo "versionName=$VERSION_NAME" >> $GITHUB_ENV
+
+      # Step 9: Calculate BUILD_NUMBER
       - name: Calculate BUILD_NUMBER
         id: build_number
+        if: env.skip_build != 'true'
         run: |
-          # Get the latest tag in the format vX.XX.XXXX
-          latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 2>/dev/null || echo "v1.01.0000")
+          # Get the latest tag following the format vX.XX.XXXX
+          latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
     
-          # Extract and increment the build number
+          # Extract the build number from the tag (last part after the last '.')
           latest_build_number=$(echo "$latest_tag" | awk -F '.' '{print $NF}')
+          # Increment the build number
           BUILD_NUMBER=$(printf "%04d" $((10#$latest_build_number + 1)))
-    
+          # Set the new build number in the environment
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
-          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      # Step 3: Check if a release with the calculated tag exists and delete if necessary
-      - name: Check and Delete Existing Release
-        uses: actions/github-script@v6
+      # Step 10: Run Lint Checks
+      - name: Run Lint Checks
+        if: env.skip_build != 'true'
+        run: ./gradlew lint --warning-mode all
+
+      # Step 11: Build with Gradle
+      - name: Build with Gradle
+        if: env.skip_build != 'true'
+        run: ./gradlew assembleRelease lintVitalRelease -PBUILD_NUMBER=$BUILD_NUMBER --warning-mode all --no-configuration-cache
+
+      # Step 12: Rename APK with Version Number
+      - name: Rename APK
+        if: env.skip_build != 'true'
+        run: |
+          ORIGINAL_APK="app/build/outputs/apk/release/app-release.apk"
+          RENAMED_APK="app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk"
+          mv "$ORIGINAL_APK" "$RENAMED_APK"
+          echo "APK renamed to $RENAMED_APK"
+
+      # Step 13: Upload artifact
+      - name: Upload artifact
+        if: env.skip_build != 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: io.esper.android.files_v${{ env.versionName }}.apk
+          path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
+          retention-days: 10
+
+      # Step 14: Create GitHub Release
+      - name: Create GitHub Release
+        if: env.skip_build != 'true'
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          script: |
-            const tagName = process.env.latest_tag;
-            const { data: releases } = await github.rest.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
+          tag_name: "v${{ env.versionName }}"
+          release_name: "Release v${{ env.versionName }}"
+          body: ${{ env.release_notes }}
+          draft: false
+          prerelease: false
 
-            // Find release with the tag name
-            const existingRelease = releases.find(release => release.tag_name === tagName);
-
-            if (existingRelease) {
-              console.log(`Release with tag ${tagName} exists. Deleting...`);
-              await github.rest.repos.deleteRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: existingRelease.id
-              });
-              console.log(`Deleted release with tag ${tagName}.`);
-            } else {
-              console.log(`No release found with tag ${tagName}.`);
-            }
+      # Step 15: Upload Release APK to GitHub Release
+      - name: Upload Release APK
+        if: env.skip_build != 'true'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
+          asset_name: io.esper.android.files_v${{ env.versionName }}.apk
+          asset_content_type: application/vnd.android.package-archive
