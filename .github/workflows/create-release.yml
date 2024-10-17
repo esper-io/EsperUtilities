@@ -1,0 +1,49 @@
+name: Create Release
+
+on:
+  workflow_run:
+    workflows: ["Android CI"]
+    types:
+      - completed
+
+permissions:
+  contents: write   # Allows creating and modifying releases
+
+jobs:
+  release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download the APK artifact from the build workflow
+      - name: Download APK Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: io.esper.android.files_v${{ github.ref_name }}.apk
+          path: ./release-apk
+
+      # 2. Create GitHub Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ github.ref_name }}"
+          release_name: "Release v${{ github.ref_name }}"
+          body: |
+            Changes in this Release:
+            - ${{ github.event.workflow_run.head_commit.message }}
+          draft: false
+          prerelease: false
+
+      # 3. Upload Release APK
+      - name: Upload Release APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release-apk/io.esper.android.files_v${{ github.ref_name }}.apk
+          asset_name: io.esper.android.files_v${{ github.ref_name }}.apk
+          asset_content_type: application/vnd.android.package-archive
