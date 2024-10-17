@@ -7,7 +7,7 @@ on:
       - completed
 
 permissions:
-  contents: write   # Allows creating and modifying releases
+  contents: write   # Grants permission to create and modify releases
 
 jobs:
   release:
@@ -15,35 +15,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Download the APK artifact from the build workflow
+      # 1. Checkout the repository (optional but recommended)
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # 2. Download the APK artifact from the build workflow
       - name: Download APK Artifact
         uses: actions/download-artifact@v3
         with:
-          name: io.esper.android.files_v${{ github.ref_name }}.apk
+          name: io.esper.android.files_v${{ github.ref_name[1:] }}.apk  # Stripping 'v' from tag
           path: ./release-apk
 
-      # 2. Create GitHub Release
+      # 3. Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ github.ref_name }}"
-          release_name: "Release v${{ github.ref_name }}"
+          tag_name: "${{ github.ref_name }}"  # e.g., v1.01.0002
+          release_name: "Release ${{ github.ref_name }}"
           body: |
             Changes in this Release:
             - ${{ github.event.workflow_run.head_commit.message }}
           draft: false
           prerelease: false
 
-      # 3. Upload Release APK
+      # 4. Upload Release APK
       - name: Upload Release APK
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release-apk/io.esper.android.files_v${{ github.ref_name }}.apk
-          asset_name: io.esper.android.files_v${{ github.ref_name }}.apk
+          asset_path: ./release-apk/io.esper.android.files_v${{ github.ref_name[1:] }}.apk
+          asset_name: io.esper.android.files_v${{ github.ref_name[1:] }}.apk
           asset_content_type: application/vnd.android.package-archive
