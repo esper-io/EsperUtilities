@@ -145,12 +145,17 @@ jobs:
           latest_tag=${{ env.latest_tag }}
           # Remove the 'v' prefix
           version_core=${latest_tag#v}
-          # Extract the build number (last segment)
-          latest_build_number=$(echo "$version_core" | awk -F '.' '{print $NF}')
+          # Split the version into major, minor, and build
+          IFS='.' read -r major minor build_number <<< "$version_core"
+          echo "Major: $major, Minor: $minor, Build Number: $build_number"
           # Increment the build number
-          BUILD_NUMBER=$(printf "%04d" $((10#$latest_build_number + 1)))
+          BUILD_NUMBER=$(printf "%04d" $((10#$build_number + 1)))
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
+          # Construct the new version name
+          NEW_VERSION_NAME="$major.$minor.$BUILD_NUMBER"
+          echo "versionName=$NEW_VERSION_NAME" >> $GITHUB_ENV
+          echo "New Version Name: $NEW_VERSION_NAME"
 
       # 15. Run Lint Checks
       - name: Run Lint Checks
