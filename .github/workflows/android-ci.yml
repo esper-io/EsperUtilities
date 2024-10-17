@@ -99,11 +99,12 @@ jobs:
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `tags/${tagName}`,
+                ref: `tags/${tagName}`
               });
               console.log(`Deleted release with tag ${tagName}.`);
             } else {
               console.log(`No release found with tag ${tagName}.`);
+            }
 
       - name: Write Version Name to File
         if: env.skip_build != 'true'
@@ -113,7 +114,6 @@ jobs:
         if: env.skip_build != 'true'
         run: |
           VERSION_NAME=$(cat app/build/versionName.txt)
-          # Parse and increment the build number in the version name
           MAJOR=$(echo $VERSION_NAME | cut -d'.' -f1)
           MINOR=$(echo $VERSION_NAME | cut -d'.' -f2)
           BUILD=$(echo $VERSION_NAME | cut -d'.' -f3)
