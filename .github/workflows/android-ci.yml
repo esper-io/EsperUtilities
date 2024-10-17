@@ -10,13 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out repository
       - name: Check out repository
         uses: actions/checkout@v3
         with:
           submodules: true
 
-      # Step 2: Cache Gradle packages (if build isn't skipped)
       - name: Cache Gradle packages
         if: env.skip_build != 'true'
         uses: actions/cache@v3
@@ -28,7 +26,6 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # Step 3: Check the commit message for version increment
       - name: Check commit message
         id: check_commit
         run: |
@@ -40,7 +37,6 @@ jobs:
             echo "skip_build=false" >> $GITHUB_ENV
           fi
 
-      # Step 4: Set up Java 17 (if build isn't skipped)
       - name: Set up Java 17
         if: env.skip_build != 'true'
         uses: actions/setup-java@v3
@@ -48,7 +44,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Step 5: Set up Android SDK and NDK (if build isn't skipped)
       - name: Set up Android SDK and NDK
         if: env.skip_build != 'true'
         uses: android-actions/setup-android@v2
@@ -58,14 +53,29 @@ jobs:
           distribution-type: 'sdk'
           build-tools: '33.0.0'
 
-      # Step 6: Calculate the latest tag for determining the build number
       - name: Calculate Latest Tag
         id: calculate_tag
         run: |
           latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      # Step 7: Check if a release with the calculated tag exists and delete if necessary
+      - name: Set up signing keystore
+        if: env.skip_build != 'true'
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | openssl base64 -d -A -out keystore.jks
+          echo "Keystore file created in the root directory."
+          
+      - name: Create signing.properties
+        if: env.skip_build != 'true'
+        run: |
+          echo "storeFile=../keystore.jks" > signing.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
+      - name: Make gradlew executable
+        if: env.skip_build != 'true'
+        run: chmod +x ./gradlew
+        
       - name: Check and Delete Existing Release
         uses: actions/github-script@v7
         env:
@@ -95,19 +105,16 @@ jobs:
               console.log(`No release found with tag ${tagName}.`);
             }
 
-      # Step 8: Write the version name to a file
       - name: Write Version Name to File
         if: env.skip_build != 'true'
         run: ./gradlew writeVersionNameToFile
 
-      # Step 9: Read version name from the generated file
       - name: Read App Version
         if: env.skip_build != 'true'
         run: |
           VERSION_NAME=$(cat app/build/versionName.txt)
           echo "versionName=$VERSION_NAME" >> $GITHUB_ENV
 
-      # Step 10: Calculate BUILD_NUMBER by incrementing from the latest tag
       - name: Calculate BUILD_NUMBER
         id: build_number
         if: env.skip_build != 'true'
@@ -118,17 +125,14 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
 
-      # Step 11: Run Lint Checks
       - name: Run Lint Checks
         if: env.skip_build != 'true'
         run: ./gradlew lint --warning-mode all
 
-      # Step 12: Build with Gradle
       - name: Build with Gradle
         if: env.skip_build != 'true'
         run: ./gradlew assembleRelease lintVitalRelease -PBUILD_NUMBER=$BUILD_NUMBER --warning-mode all --no-configuration-cache
 
-      # Step 13: Rename APK with Version Number
       - name: Rename APK
         if: env.skip_build != 'true'
         run: |
@@ -137,7 +141,6 @@ jobs:
           mv "$ORIGINAL_APK" "$RENAMED_APK"
           echo "APK renamed to $RENAMED_APK"
 
-      # Step 14: Upload APK as Artifact
       - name: Upload artifact
         if: env.skip_build != 'true'
         uses: actions/upload-artifact@v3
@@ -146,7 +149,6 @@ jobs:
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
-      # Step 15: Collect recent commit messages for release notes
       - name: Collect Release Notes
         id: release_notes
         if: env.skip_build != 'true'
@@ -154,7 +156,6 @@ jobs:
           RECENT_COMMITS=$(git log -5 --pretty=format:"- %s")
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
-      # Step 16: Create GitHub Release
       - name: Create GitHub Release
         if: env.skip_build != 'true'
         id: create_release
@@ -168,7 +169,6 @@ jobs:
           draft: false
           prerelease: false
 
-      # Step 17: Upload Release APK to GitHub Release
       - name: Upload Release APK
         if: env.skip_build != 'true'
         uses: actions/upload-release-asset@v1
