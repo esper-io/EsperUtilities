@@ -3,7 +3,6 @@ name: Android CI
 # Define the permissions for the GITHUB_TOKEN
 permissions:
   contents: write       # Allows read and write access to repository contents
-  releases: write       # Allows creating and managing releases
 
 on:
   push:
