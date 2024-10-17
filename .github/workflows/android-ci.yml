@@ -58,6 +58,13 @@ jobs:
         run: |
           latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+          echo "Calculated latest_tag: $latest_tag"
+
+      - name: Debug Environment Variables
+        run: |
+          echo "Debugging environment variables..."
+          echo "latest_tag=${{ env.latest_tag }}"
+          echo "versionName=${{ env.versionName }}"
 
       - name: Set up signing keystore
         if: env.skip_build != 'true'
@@ -72,29 +79,20 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
-
-      - name: Inject API Key into gradle.properties
-        if: env.skip_build != 'true'
-        run: echo "MISSION_CONTROL_API_KEY=${{ secrets.MISSION_CONTROL_API_KEY }}" >> "$GITHUB_WORKSPACE/gradle.properties"
-        
+          
       - name: Make gradlew executable
         if: env.skip_build != 'true'
         run: chmod +x ./gradlew
         
-            # Ensure versionName is set correctly
-      - name: Debug versionName
-        run: |
-          echo "versionName=${{ env.versionName }}"
-
-      # Step: Check and Delete Existing Release
       - name: Check and Delete Existing Release
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_NAME: ${{ env.versionName }} # Explicitly pass versionName as an environment variable
+          VERSION_NAME: ${{ env.versionName }}
+          LATEST_TAG: ${{ env.latest_tag }}
         with:
           script: |
-            const tagName = `v${process.env.VERSION_NAME}`; // Use the explicitly set VERSION_NAME
+            const tagName = process.env.LATEST_TAG || `v${process.env.VERSION_NAME}`;
             console.log(`Attempting to delete release with tag: ${tagName}`);
             
             // Fetch releases
@@ -131,82 +129,3 @@ jobs:
                 throw error;
               }
             }
-
-            
-      - name: Write Version Name to File
-        if: env.skip_build != 'true'
-        run: ./gradlew writeVersionNameToFile
-
-      - name: Read and Increment Version
-        if: env.skip_build != 'true'
-        run: |
-          VERSION_NAME=$(cat app/build/versionName.txt)
-          MAJOR=$(echo $VERSION_NAME | cut -d'.' -f1)
-          MINOR=$(echo $VERSION_NAME | cut -d'.' -f2)
-          BUILD=$(echo $VERSION_NAME | cut -d'.' -f3)
-          NEW_BUILD=$(printf "%04d" $((10#$BUILD + 1)))
-          NEW_VERSION_NAME="${MAJOR}.${MINOR}.${NEW_BUILD}"
-          echo "versionName=$NEW_VERSION_NAME" >> $GITHUB_ENV
-
-      - name: Calculate BUILD_NUMBER
-        id: build_number
-        if: env.skip_build != 'true'
-        run: |
-          BUILD_NUMBER=$(echo ${{ env.versionName }} | awk -F '.' '{print $NF}')
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
-
-      - name: Run Lint Checks
-        if: env.skip_build != 'true'
-        run: ./gradlew lint --warning-mode all
-
-      - name: Build with Gradle
-        if: env.skip_build != 'true'
-        run: ./gradlew assembleRelease lintVitalRelease -PBUILD_NUMBER=$BUILD_NUMBER --warning-mode all --no-configuration-cache
-
-      - name: Rename APK
-        if: env.skip_build != 'true'
-        run: |
-          ORIGINAL_APK="app/build/outputs/apk/release/app-release.apk"
-          RENAMED_APK="app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk"
-          mv "$ORIGINAL_APK" "$RENAMED_APK"
-          echo "APK renamed to $RENAMED_APK"
-
-      - name: Upload artifact
-        if: env.skip_build != 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: io.esper.android.files_v${{ env.versionName }}.apk
-          path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
-          retention-days: 10
-
-      - name: Collect Release Notes
-        id: release_notes
-        if: env.skip_build != 'true'
-        run: |
-          RECENT_COMMITS=$(git log -5 --pretty=format:"- %s")
-          echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
-
-      - name: Create GitHub Release
-        if: env.skip_build != 'true'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ env.versionName }}"
-          release_name: "Release v${{ env.versionName }}"
-          body: ${{ env.release_notes }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release APK
-        if: env.skip_build != 'true'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
-          asset_name: io.esper.android.files_v${{ env.versionName }}.apk
-          asset_content_type: application/vnd.android.package-archive
