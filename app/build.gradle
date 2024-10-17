@@ -97,6 +97,10 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+            buildConfigField "String", "MISSION_CONTROL_API_KEY", "\"${project.MISSION_CONTROL_API_KEY ?: ""}\""
+        }
+        debug {
+            buildConfigField "String", "MISSION_CONTROL_API_KEY", "\"${project.MISSION_CONTROL_API_KEY ?: ""}\""
         }
     }
     packagingOptions {
