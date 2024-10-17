@@ -67,17 +67,17 @@ jobs:
 
       # Step 7: Check if a release with the calculated tag exists and delete if necessary
       - name: Check and Delete Existing Release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const tagName = process.env.latest_tag;
-            const { data: releases } = await github.rest.repos.listReleases({
+            const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
-            const existingRelease = releases.find(release => release.tag_name === tagName);
+            const existingRelease = releases.data.find(release => release.tag_name === tagName);
             if (existingRelease) {
               console.log(`Release with tag ${tagName} exists. Deleting...`);
               await github.rest.repos.deleteRelease({
@@ -85,9 +85,15 @@ jobs:
                 repo: context.repo.repo,
                 release_id: existingRelease.id
               });
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tagName}`,
+              });
               console.log(`Deleted release with tag ${tagName}.`);
             } else {
               console.log(`No release found with tag ${tagName}.`);
+            }
 
       # Step 8: Write the version name to a file
       - name: Write Version Name to File
@@ -106,7 +112,7 @@ jobs:
         id: build_number
         if: env.skip_build != 'true'
         run: |
-          latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
+          latest_tag=${{ env.latest_tag }}
           latest_build_number=$(echo "$latest_tag" | awk -F '.' '{print $NF}')
           BUILD_NUMBER=$(printf "%04d" $((10#$latest_build_number + 1)))
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
