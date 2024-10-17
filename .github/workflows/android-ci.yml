@@ -72,6 +72,11 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
+
+      - name: Inject API Key into gradle.properties
+        if: env.skip_build != 'true'
+        run: echo "MISSION_CONTROL_API_KEY=${{ secrets.MISSION_CONTROL_API_KEY }}" >> "$GITHUB_WORKSPACE/gradle.properties"
+        
       - name: Make gradlew executable
         if: env.skip_build != 'true'
         run: chmod +x ./gradlew
@@ -98,7 +103,7 @@ jobs:
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `tags/${tagName}`,
+                ref: `tags/${tagName}`
               });
               console.log(`Deleted release with tag ${tagName}.`);
             } else {
@@ -109,19 +114,22 @@ jobs:
         if: env.skip_build != 'true'
         run: ./gradlew writeVersionNameToFile
 
-      - name: Read App Version
+      - name: Read and Increment Version
         if: env.skip_build != 'true'
         run: |
           VERSION_NAME=$(cat app/build/versionName.txt)
-          echo "versionName=$VERSION_NAME" >> $GITHUB_ENV
+          MAJOR=$(echo $VERSION_NAME | cut -d'.' -f1)
+          MINOR=$(echo $VERSION_NAME | cut -d'.' -f2)
+          BUILD=$(echo $VERSION_NAME | cut -d'.' -f3)
+          NEW_BUILD=$(printf "%04d" $((10#$BUILD + 1)))
+          NEW_VERSION_NAME="${MAJOR}.${MINOR}.${NEW_BUILD}"
+          echo "versionName=$NEW_VERSION_NAME" >> $GITHUB_ENV
 
       - name: Calculate BUILD_NUMBER
         id: build_number
         if: env.skip_build != 'true'
         run: |
-          latest_tag=${{ env.latest_tag }}
-          latest_build_number=$(echo "$latest_tag" | awk -F '.' '{print $NF}')
-          BUILD_NUMBER=$(printf "%04d" $((10#$latest_build_number + 1)))
+          BUILD_NUMBER=$(echo ${{ env.versionName }} | awk -F '.' '{print $NF}')
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
           echo "Calculated BUILD_NUMBER: $BUILD_NUMBER"
 
