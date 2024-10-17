@@ -87,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const tagName = process.env.latest_tag;
+            const tagName = "v${{ env.versionName }}";
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -100,16 +100,26 @@ jobs:
                 repo: context.repo.repo,
                 release_id: existingRelease.id
               });
+            } else {
+              console.log(`No release found with tag ${tagName}.`);
+            }
+
+            // Check and delete the tag if it exists
+            try {
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 ref: `tags/${tagName}`
               });
-              console.log(`Deleted release with tag ${tagName}.`);
-            } else {
-              console.log(`No release found with tag ${tagName}.`);
+              console.log(`Deleted tag ${tagName}.`);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`Tag ${tagName} does not exist, no need to delete.`);
+              } else {
+                throw error;
+              }
             }
-
+            
       - name: Write Version Name to File
         if: env.skip_build != 'true'
         run: ./gradlew writeVersionNameToFile
