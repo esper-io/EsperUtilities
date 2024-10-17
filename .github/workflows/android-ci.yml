@@ -72,7 +72,11 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
-          
+
+      - name: Inject API Key into gradle.properties
+        if: env.skip_build != 'true'
+        run: echo "MISSION_CONTROL_API_KEY=${{ secrets.MISSION_CONTROL_API_KEY }}" >> "$GITHUB_WORKSPACE/gradle.properties"
+        
       - name: Make gradlew executable
         if: env.skip_build != 'true'
         run: chmod +x ./gradlew
