@@ -6,7 +6,7 @@ on:
       - master
 
 permissions:
-  contents: write   # Allows pushing tags and modifying repository contents
+  contents: write   # Grants permission to push tags and modify repository contents
 
 jobs:
   build:
@@ -41,6 +41,7 @@ jobs:
             echo "skip_build=true" >> $GITHUB_ENV
           else
             echo "skip_build=false" >> $GITHUB_ENV
+          fi  # Added 'fi' to close the if statement
 
       # 4. Set up Java 17
       - name: Set up Java 17
