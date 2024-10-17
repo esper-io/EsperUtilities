@@ -87,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const tagName = "v${{ env.versionName }}";
+            const tagName = `v${process.env.versionName}`;  // Correctly set tagName using versionName
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
