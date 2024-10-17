@@ -82,7 +82,7 @@ jobs:
           git fetch --tags
           git tag -l
 
-      - name: Check and Delete Existing Release
+            - name: Check and Delete Existing Release
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,5 +109,3 @@ jobs:
               console.log(`Deleted release with tag ${tagName}.`);
             } else {
               console.log(`No release found with tag ${tagName}.`);
-
-      # Continue with other steps...
