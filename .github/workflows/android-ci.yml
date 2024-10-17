@@ -74,12 +74,10 @@ jobs:
         if: env.skip_build != 'true'
         run: chmod +x ./gradlew
 
-      # Write the version name to a file
       - name: Write Version Name to File
         if: env.skip_build != 'true'
         run: ./gradlew writeVersionNameToFile
 
-      # Read version name from the generated file
       - name: Read App Version
         if: env.skip_build != 'true'
         run: |
@@ -90,7 +88,6 @@ jobs:
         id: build_number
         if: env.skip_build != 'true'
         run: |
-          # Get the latest tag following the format vX.XX.XXXX
           latest_tag=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 || echo "v1.01.0000")
           latest_build_number=$(echo "$latest_tag" | awk -F '.' '{print $NF}')
           BUILD_NUMBER=$(printf "%04d" $((10#$latest_build_number + 1)))
@@ -121,7 +118,6 @@ jobs:
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
-      # Collect recent commit messages for release notes
       - name: Collect Release Notes
         id: release_notes
         if: env.skip_build != 'true'
@@ -129,7 +125,7 @@ jobs:
           RECENT_COMMITS=$(git log -5 --pretty=format:"- %s")
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
-      - name: Delete Existing Release (if exists)
+      - name: Delete Existing Release and Tag (if exists)
         if: env.skip_build != 'true'
         uses: actions/github-script@v6
         env:
@@ -143,21 +139,23 @@ jobs:
                 repo: context.repo.repo,
                 tag
               });
-              if (release) {
-                await github.repos.deleteRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: release.data.id
-                });
-                await github.git.deleteRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: `tags/${tag}`
-                });
-                console.log(`Deleted existing release and tag: ${tag}`);
-              }
+              await github.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id
+              });
+              await github.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tag}`
+              });
+              console.log(`Deleted existing release and tag: ${tag}`);
             } catch (error) {
-              console.log(`No existing release to delete for tag: ${tag}`);
+              if (error.status === 404) {
+                console.log(`No existing release to delete for tag: ${tag}`);
+              } else {
+                throw error;
+              }
             }
 
       - name: Create GitHub Release
