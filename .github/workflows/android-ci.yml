@@ -118,7 +118,7 @@ jobs:
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `tags/${tagName}`,
+                ref: `refs/tags/${tagName}`,
               });
               console.log(`Deleted release with tag ${tagName}.`);
             } else {
@@ -201,5 +201,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ env.versionName }}" -m "Release v${{ env.versionName }}"
-          git push origin "v${{ env.versionName }}"
+          # Check if tag exists
+          if git rev-parse "v${{ env.versionName }}" >/dev/null 2>&1; then
+            echo "Tag v${{ env.versionName }} already exists. Skipping tag creation."
+          else
+            git tag -a "v${{ env.versionName }}" -m "Release v${{ env.versionName }}"
+            git push origin "v${{ env.versionName }}"
+          fi
