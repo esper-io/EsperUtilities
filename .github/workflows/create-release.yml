@@ -27,11 +27,7 @@ jobs:
       - name: Extract version number from tag
         id: extract_version
         run: |
-          TAG=$(git describe --tags --abbrev=0 || echo "")
-          if [ -z "$TAG" ]; then
-            echo "No tags found. Exiting."
-            exit 1
-          fi
+          TAG=$(git describe --tags --abbrev=0)
           VERSION=${TAG#v}
           echo "versionName=${VERSION}" >> $GITHUB_ENV
           echo "Extracted versionName: $VERSION"
@@ -42,8 +38,6 @@ jobs:
         with:
           name: io.esper.android.files.apk  # Fixed artifact name
           path: ./release-apk
-        env:
-          versionName: ${{ env.versionName }}
 
       # 2a. List downloaded artifacts for verification
       - name: List Downloaded APKs
@@ -67,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ env.versionName }}"  # e.g., v1.01.0001
+          tag_name: "v${{ env.versionName }}"  # e.g., v1.01.0004
           release_name: "Release v${{ env.versionName }}"
           body: |
             Changes in this Release:
