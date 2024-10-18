@@ -187,8 +187,26 @@ jobs:
         id: release_notes
         if: env.skip_build != 'true'
         run: |
-          RECENT_COMMITS=$(git log -5 --pretty=format:"%s" | paste -sd '; ' -)
-          echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
+          # Function to check if a commit is automated
+          is_automated_commit() {
+            local message="$1"
+            if [[ "$message" =~ ^Update\ android-ci\.yml || "$message" =~ ^Update\ create-release\.yml ]]; then
+              return 0
+            else
+              return 1
+            fi
+          }
+
+          # Fetch the latest commit message
+          RECENT_COMMIT=$(git log -1 --pretty=%B)
+
+          # Check if it's an automated commit
+          if is_automated_commit "$RECENT_COMMIT"; then
+            # Fetch the previous commit message
+            RECENT_COMMIT=$(git log -2 --pretty=format:"%B" | tail -1)
+          fi
+
+          echo "release_notes=$RECENT_COMMIT" >> $GITHUB_ENV
 
       # 19. Create and Push Tag BEFORE Creating Release
       - name: Create and Push Tag

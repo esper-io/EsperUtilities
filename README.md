@@ -6,7 +6,7 @@ Welcome to **Esper Utilities**, an all-in-one utility app designed to streamline
 
 ## Key Features
 
-- **File Manager**: Organize, view, and manage files with powerful features like root access, breadcrumbs navigation, and archive support.
+- **File Manager**: Organize, view, and manage files with powerful features like root access, breadcrumbs navigation, and archive support. Inbuilt file viewer supports images, videos, audio, and text files along with pdf viewer.
 - **Network Checker**: Diagnose network connectivity issues and monitor your connection’s health.
 - **Content Manager**: Easily download and manage your media and files.
 - **App Store**: Discover, download, and manage applications seamlessly.
