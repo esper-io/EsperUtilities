@@ -23,11 +23,15 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history including tags
 
-      # 1a. Extract version number without 'v'
-      - name: Extract version number
+      # 1a. Extract version number from the latest tag
+      - name: Extract version number from tag
         id: extract_version
         run: |
-          TAG=${GITHUB_REF##*/}
+          TAG=$(git describe --tags --abbrev=0 || echo "")
+          if [ -z "$TAG" ]; then
+            echo "No tags found. Exiting."
+            exit 1
+          fi
           VERSION=${TAG#v}
           echo "versionName=${VERSION}" >> $GITHUB_ENV
           echo "Extracted versionName: $VERSION"
@@ -36,8 +40,10 @@ jobs:
       - name: Download APK Artifact
         uses: actions/download-artifact@v3
         with:
-          name: io.esper.android.files.apk  # Updated to match upload artifact name
+          name: io.esper.android.files.apk  # Fixed artifact name
           path: ./release-apk
+        env:
+          versionName: ${{ env.versionName }}
 
       # 2a. List downloaded artifacts for verification
       - name: List Downloaded APKs
