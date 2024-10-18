@@ -207,4 +207,30 @@ jobs:
         with:
           name: io.esper.android.files.apk  # Fixed artifact name
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
-          retention-days: 10
+          retention-days: 2
+
+      # 21. Create GitHub Release
+      - name: Create GitHub Release
+        if: env.skip_build != 'true'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ env.versionName }}"
+          release_name: "Release v${{ env.versionName }}"
+          body: ${{ env.release_notes }}
+          draft: false
+          prerelease: false
+
+      # 21. Upload Release APK
+      - name: Upload Release APK
+        if: env.skip_build != 'true'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
+          asset_name: io.esper.android.files_v${{ env.versionName }}.apk
+          asset_content_type: application/vnd.android.package-archive
