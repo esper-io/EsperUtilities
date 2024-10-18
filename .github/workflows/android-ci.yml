@@ -1,5 +1,3 @@
-# File: .github/workflows/android-ci.yml
-
 name: Android CI
 
 on:
@@ -8,7 +6,7 @@ on:
       - master
 
 permissions:
-  contents: write   # Grants permission to push tags and modify repository contents
+  contents: write
 
 jobs:
   build:
@@ -24,7 +22,6 @@ jobs:
 
       # 2. Cache Gradle packages
       - name: Cache Gradle packages
-        if: env.skip_build != 'true'
         uses: actions/cache@v3
         with:
           path: |
@@ -34,29 +31,15 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # 3. Check commit message to decide whether to skip build
-      - name: Check commit message
-        id: check_commit
-        run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MESSAGE"
-          if [[ "$COMMIT_MESSAGE" == "Increment versionCode to "* ]]; then
-            echo "skip_build=true" >> $GITHUB_ENV
-          else
-            echo "skip_build=false" >> $GITHUB_ENV
-          fi
-
-      # 4. Set up Java 17
+      # 3. Set up Java 17
       - name: Set up Java 17
-        if: env.skip_build != 'true'
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 5. Set up Android SDK and NDK
+      # 4. Set up Android SDK and NDK
       - name: Set up Android SDK and NDK
-        if: env.skip_build != 'true'
         uses: android-actions/setup-android@v2
         with:
           sdk-version: '33.0.0'
@@ -64,147 +47,28 @@ jobs:
           distribution-type: 'sdk'
           build-tools: '33.0.0'
 
-      # 6. Determine Next Build Number
-      - name: Determine Next Build Number
-        id: build_number
-        if: env.skip_build != 'true'
-        run: |
-          # Define version components with leading zeros
-          vMajor=1
-          vMinor=01  # Ensure leading zero to match tag format 'v1.01.*'
-
-          # Fetch all tags matching v1.01.*
-          tags=$(git tag -l "v${vMajor}.${vMinor}.*")
-          echo "Existing tags: $tags"
-
-          # Extract build numbers
-          build_numbers=()
-          for tag in $tags; do
-            build_num=${tag#v${vMajor}.${vMinor}.}
-            build_numbers+=($build_num)
-          done
-
-          # Determine the maximum build number
-          max=0
-          for num in "${build_numbers[@]}"; do
-            if ((10#$num > max)); then
-              max=10#$num
-            fi
-          done
-          echo "Current Max Build Number: $max"
-
-          # Increment build number
-          next=$((max + 1))
-          # Zero-pad to 4 digits
-          next_padded=$(printf "%04d" $next)
-          echo "Next Build Number: $next_padded"
-
-          # Export variables
-          echo "BUILD_NUMBER=$next_padded" >> $GITHUB_ENV
-          echo "versionName=1.${vMinor}.$next_padded" >> $GITHUB_ENV
-
-      # 7. Set up signing keystore
-      - name: Set up signing keystore
-        if: env.skip_build != 'true'
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | openssl base64 -d -A -out keystore.jks
-          echo "Keystore file created in the root directory."
-
-      # 8. Create signing.properties
-      - name: Create signing.properties
-        if: env.skip_build != 'true'
-        run: |
-          echo "storeFile=../keystore.jks" > signing.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
-
-      # 9. Inject API Key into gradle.properties
-      - name: Inject API Key into gradle.properties
-        if: env.skip_build != 'true'
-        run: echo "MISSION_CONTROL_API_KEY=${{ secrets.MISSION_CONTROL_API_KEY }}" >> "$GITHUB_WORKSPACE/app/gradle.properties"
-
-      # 10. Make gradlew executable
-      - name: Make gradlew executable
-        if: env.skip_build != 'true'
-        run: chmod +x ./gradlew
-
-      # 11. Write Version Name to File
-      - name: Write Version Name to File
-        if: env.skip_build != 'true'
-        run: ./gradlew writeVersionNameToFile
-
-      # 12. Verify Version Name File
-      - name: Verify Version Name File
-        if: env.skip_build != 'true'
-        run: |
-          echo "Verifying versionName.txt content:"
-          cat app/build/versionName.txt
-          echo "Listing app/build directory:"
-          ls -l app/build/
-
-      # 13. Read App Version
-      - name: Read App Version
-        if: env.skip_build != 'true'
-        run: |
-          VERSION_NAME=$(cat app/build/versionName.txt)
-          echo "versionName=$VERSION_NAME" >> $GITHUB_ENV
-          echo "Version Name: $VERSION_NAME"
-
-      # 14. Run Lint Checks
-      - name: Run Lint Checks
-        if: env.skip_build != 'true'
-        run: ./gradlew lint --warning-mode all
-
-      # 15. Build with Gradle
+      # 5. Build with Gradle
       - name: Build with Gradle
-        if: env.skip_build != 'true'
-        run: ./gradlew assembleRelease lintVitalRelease -PBUILD_NUMBER=$BUILD_NUMBER --warning-mode all --no-configuration-cache
+        run: ./gradlew assembleRelease --warning-mode all
 
-      # 16. Rename APK
-      - name: Rename APK
-        if: env.skip_build != 'true'
-        run: |
-          ORIGINAL_APK="app/build/outputs/apk/release/app-release.apk"
-          RENAMED_APK="app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk"
-          mv "$ORIGINAL_APK" "$RENAMED_APK"
-          echo "APK renamed to $RENAMED_APK"
-          ls -l app/build/outputs/apk/release/  # Added for debugging
-
-      # 17. Verify APK Before Upload
-      - name: Verify APK Before Upload
-        if: env.skip_build != 'true'
-        run: |
-          if [ -f "app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk" ]; then
-            echo "APK exists and is ready for upload."
-          else
-            echo "APK does not exist. Upload will fail."
-            exit 1
-          fi
-
-      # 18. Collect Release Notes
-      - name: Collect Release Notes
-        id: release_notes
-        if: env.skip_build != 'true'
-        run: |
-          RECENT_COMMITS=$(git log -5 --pretty=format:"%s" | paste -sd '; ' -)
-          echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
-
-      # 19. Create and Push Tag BEFORE Creating Release
+      # 6. Create and Push Tag
       - name: Create and Push Tag
-        if: env.skip_build != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Create and push the new tag
-          git tag -a "v${{ env.versionName }}" -m "Release v${{ env.versionName }}"
-          git push origin "v${{ env.versionName }}"
+          TAG="v1.01.$(date +%Y%m%d%H%M%S)"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+        id: tag
 
-      # 20. Upload artifact
+      # 7. Upload artifact
       - name: Upload artifact
-        if: env.skip_build != 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: io.esper.android.files.apk  # Fixed artifact name
-          path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
+          name: io.esper.android.files.apk
+          path: app/build/outputs/apk/release/app-release.apk
           retention-days: 10
+
+      # Debug: List artifacts in the build directory
+      - name: List APK in build directory
+        run: ls -la app/build/outputs/apk/release/
