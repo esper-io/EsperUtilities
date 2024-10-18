@@ -69,9 +69,9 @@ jobs:
         id: build_number
         if: env.skip_build != 'true'
         run: |
-          # Define version components
+          # Define version components with leading zeros
           vMajor=1
-          vMinor=1
+          vMinor=01
 
           # Fetch all tags matching v1.01.*
           tags=$(git tag -l "v${vMajor}.${vMinor}.*")
@@ -176,7 +176,7 @@ jobs:
         if: env.skip_build != 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: io.esper.android.files_v.apk  # Fixed name
+          name: io.esper.android.files_v${{ env.versionName }}.apk  # Updated to include versionName for clarity
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
