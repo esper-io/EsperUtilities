@@ -185,7 +185,7 @@ jobs:
         id: release_notes
         if: env.skip_build != 'true'
         run: |
-          RECENT_COMMITS=$(git log -5 --pretty=format:"- %s")
+          RECENT_COMMITS=$(git log -5 --pretty=format:"%s" | paste -sd '; ' -)
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
       # 19. Create and Push Tag BEFORE Creating Release
