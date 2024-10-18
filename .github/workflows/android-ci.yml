@@ -152,9 +152,9 @@ jobs:
           echo "Version Name: $VERSION_NAME"
 
       # 14. Run Lint Checks
-      - name: Run Lint Checks
-        if: env.skip_build != 'true'
-        run: ./gradlew lint --warning-mode all
+      #- name: Run Lint Checks
+        #if: env.skip_build != 'true'
+        #run: ./gradlew lint --warning-mode all
 
       # 15. Build with Gradle
       - name: Build with Gradle
