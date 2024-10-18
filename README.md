@@ -1,4 +1,4 @@
-# Esper Utilities [![Android CI](https://github.com/esper-io/EsperUtilities/actions/workflows/android-ci.yml/badge.svg)](https://github.com/esper-io/EsperUtilities/actions/workflows/android-ci.yml)
+# Esper Utilities [![Android CI](https://github.com/esper-io/EsperUtilities/actions/workflows/android-ci.yml/badge.svg)](https://github.com/esper-io/EsperUtilities/actions/workflows/android-ci.yml) [![Create Release](https://github.com/esper-io/EsperUtilities/actions/workflows/create-release.yml/badge.svg)](https://github.com/esper-io/EsperUtilities/actions/workflows/create-release.yml)
 
 **Powering Your World with a Unified Toolset**
 
