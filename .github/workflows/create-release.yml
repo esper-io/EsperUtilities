@@ -29,14 +29,30 @@ jobs:
         run: |
           TAG=${GITHUB_REF##*/}
           VERSION=${TAG#v}
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "versionName=${VERSION}" >> $GITHUB_ENV
+          echo "Extracted versionName: $VERSION"
 
       # 2. Download the APK artifact from the build workflow
       - name: Download APK Artifact
         uses: actions/download-artifact@v3
         with:
-          name: io.esper.android.files_v${{ env.versionName }}.apk  # Use env.versionName
+          name: io.esper.android.files.apk  # Updated to match upload artifact name
           path: ./release-apk
+
+      # 2a. List downloaded artifacts for verification
+      - name: List Downloaded APKs
+        run: ls -l ./release-apk/
+
+      # 2b. Verify Downloaded APK Exists
+      - name: Verify Downloaded APK Exists
+        run: |
+          APK_PATH="./release-apk/io.esper.android.files_v${{ env.versionName }}.apk"
+          if [ -f "$APK_PATH" ]; then
+            echo "APK exists: $APK_PATH"
+          else
+            echo "Error: APK not found at $APK_PATH"
+            exit 1
+          fi
 
       # 3. Create GitHub Release
       - name: Create GitHub Release
