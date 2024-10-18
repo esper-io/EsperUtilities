@@ -10,13 +10,6 @@ buildscript {
     }
 }
 
-// Define manual version components
-def vMajor = 1
-def vMinor = 1
-
-// Retrieve the build number from environment variable, default to 0 if not set
-def vBuild = System.getenv("BUILD_NUMBER")?.toInteger() ?: 0
-
 def signingPropertiesFile = rootProject.file('signing.properties')
 def signingProperties = new Properties()
 
@@ -36,9 +29,25 @@ android {
         minSdk 21
         targetSdk 34
 
-        // Calculate versionCode and versionName based on vMajor, vMinor, and vBuild
-        versionCode vMajor * 1000000 + vMinor * 10000 + vBuild
-        versionName "${vMajor}.${String.format('%02d', vMinor)}.${String.format('%04d', vBuild)}"
+        // Retrieve version components from environment variables or use default values
+        def vMajor = System.getenv("VERSION_MAJOR") ?: "1"
+        def vMinor = System.getenv("VERSION_MINOR") ?: "01"
+        def buildNumber = System.getenv("BUILD_NUMBER") ?: "0001"
+
+        // Ensure vMinor and buildNumber have leading zeros
+        try {
+            vMinor = String.format("%02d", vMinor.toInteger())
+            buildNumber = String.format("%04d", buildNumber.toInteger())
+        } catch (NumberFormatException e) {
+            throw new GradleException("VERSION_MAJOR, VERSION_MINOR, and BUILD_NUMBER must be integers.")
+        }
+
+        // Construct versionName
+        versionName = "${vMajor}.${vMinor}.${buildNumber}"
+
+        // Calculate versionCode
+        // Example: versionName = "1.10.0001" => versionCode = 1010001
+        versionCode = (vMajor.toInteger() * 1000000) + (vMinor.toInteger() * 1000) + buildNumber.toInteger()
 
         resValue 'string', 'app_version', versionName + ' (' + versionCode + ')'
         buildConfigField 'String', 'FILE_PROVIDIER_AUTHORITY', 'APPLICATION_ID + ".file_provider"'
@@ -54,7 +63,6 @@ android {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
-        buildConfigField "String", "MISSION_CONTROL_API_KEY", "\"82366173-a275-4dab-8955-50a4d44b79a7\""
     }
     buildFeatures {
         aidl true
