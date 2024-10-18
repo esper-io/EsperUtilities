@@ -30,42 +30,38 @@ jobs:
           echo "versionName=${VERSION}" >> $GITHUB_ENV
           echo "Extracted versionName: $VERSION"
 
-      # 3. List all available artifacts
-      - name: List all available artifacts
+      # 3. List available artifacts for debugging
+      - name: List available artifacts
         run: |
+          echo "Listing available artifacts from this workflow:"
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts
+          https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts
 
       # 4. Download APK Artifact
       - name: Download APK Artifact
         uses: actions/download-artifact@v3
         with:
-          name: io.esper.android.files.apk
+          name: io.esper.android.files.apk  # Fixed name as per android-ci.yml
           path: ./release-apk
 
-      # 5. List downloaded APKs for verification
-      - name: List downloaded APKs
-        run: ls -la ./release-apk/
-
-      # 6. Verify Downloaded APK Exists
-      - name: Verify Downloaded APK Exists
+      # 5. Verify APK Downloaded
+      - name: Verify APK Downloaded
         run: |
-          APK_PATH="./release-apk/io.esper.android.files.apk"
-          if [ -f "$APK_PATH" ]; then
-            echo "APK exists: $APK_PATH"
+          if [ -f "./release-apk/io.esper.android.files.apk" ]; then
+            echo "APK download verified: ./release-apk/io.esper.android.files.apk"
           else
-            echo "Error: APK not found at $APK_PATH"
+            echo "Error: APK not found. Exiting."
             exit 1
           fi
 
-      # 7. Create GitHub Release
+      # 6. Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ env.versionName }}"  # Use the version name extracted
+          tag_name: "v${{ env.versionName }}"  # Use extracted versionName
           release_name: "Release v${{ env.versionName }}"
           body: |
             Changes in this Release:
@@ -73,7 +69,7 @@ jobs:
           draft: false
           prerelease: false
 
-      # 8. Upload Release APK
+      # 7. Upload Release APK
       - name: Upload Release APK
         uses: actions/upload-release-asset@v1
         env:
