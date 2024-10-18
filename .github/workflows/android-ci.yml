@@ -171,7 +171,18 @@ jobs:
           echo "APK renamed to $RENAMED_APK"
           ls -l app/build/outputs/apk/release/  # Added for debugging
 
-      # 17. Upload artifact
+      # 17. Verify APK Before Upload
+      - name: Verify APK Before Upload
+        if: env.skip_build != 'true'
+        run: |
+          if [ -f "app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk" ]; then
+            echo "APK exists and is ready for upload."
+          else
+            echo "APK does not exist. Upload will fail."
+            exit 1
+          fi
+
+      # 18. Upload artifact
       - name: Upload artifact
         if: env.skip_build != 'true'
         uses: actions/upload-artifact@v3
@@ -180,7 +191,7 @@ jobs:
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
-      # 18. Collect Release Notes
+      # 19. Collect Release Notes
       - name: Collect Release Notes
         id: release_notes
         if: env.skip_build != 'true'
@@ -188,7 +199,7 @@ jobs:
           RECENT_COMMITS=$(git log -5 --pretty=format:"%s" | paste -sd '; ' -)
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
-      # 19. Create and Push Tag BEFORE Creating Release
+      # 20. Create and Push Tag BEFORE Creating Release
       - name: Create and Push Tag
         if: env.skip_build != 'true'
         run: |
