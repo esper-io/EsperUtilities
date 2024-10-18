@@ -182,16 +182,7 @@ jobs:
             exit 1
           fi
 
-      # 18. Upload artifact
-      - name: Upload artifact
-        if: env.skip_build != 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: io.esper.android.files.apk  # Fixed artifact name
-          path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
-          retention-days: 10
-
-      # 19. Collect Release Notes
+      # 18. Collect Release Notes
       - name: Collect Release Notes
         id: release_notes
         if: env.skip_build != 'true'
@@ -199,7 +190,7 @@ jobs:
           RECENT_COMMITS=$(git log -5 --pretty=format:"%s" | paste -sd '; ' -)
           echo "release_notes=$RECENT_COMMITS" >> $GITHUB_ENV
 
-      # 20. Create and Push Tag BEFORE Creating Release
+      # 19. Create and Push Tag BEFORE Creating Release
       - name: Create and Push Tag
         if: env.skip_build != 'true'
         run: |
@@ -208,3 +199,12 @@ jobs:
           # Create and push the new tag
           git tag -a "v${{ env.versionName }}" -m "Release v${{ env.versionName }}"
           git push origin "v${{ env.versionName }}"
+
+      # 20. Upload artifact
+      - name: Upload artifact
+        if: env.skip_build != 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: io.esper.android.files.apk  # Fixed artifact name
+          path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
+          retention-days: 10
