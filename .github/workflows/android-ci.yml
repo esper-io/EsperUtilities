@@ -176,7 +176,7 @@ jobs:
         if: env.skip_build != 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: io.esper.android.files_v${{ env.versionName }}.apk
+          name: io.esper.android.files_v.apk  # Fixed name
           path: app/build/outputs/apk/release/io.esper.android.files_v${{ env.versionName }}.apk
           retention-days: 10
 
