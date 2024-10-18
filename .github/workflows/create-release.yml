@@ -31,6 +31,9 @@ jobs:
           echo "versionName=${VERSION}" >> $GITHUB_ENV
           echo "Extracted versionName: $VERSION"
 
+      - name: List files in release-apk directory
+        run: ls -l ./release-apk
+
       # 3. Download APK Artifact using v4
       - name: Download APK Artifact
         uses: actions/download-artifact@v4
