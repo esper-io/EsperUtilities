@@ -1,5 +1,3 @@
-# File: .github/workflows/create-release.yml
-
 name: Create Release
 
 on:
@@ -23,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history including tags
 
-      # 1a. Extract version number from the latest tag
+      # 2. Extract version number from the latest tag
       - name: Extract version number from tag
         id: extract_version
         run: |
@@ -32,21 +30,27 @@ jobs:
           echo "versionName=${VERSION}" >> $GITHUB_ENV
           echo "Extracted versionName: $VERSION"
 
-      # 2. Download the APK artifact from the build workflow
+      # 3. List all available artifacts
+      - name: List all available artifacts
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts
+
+      # 4. Download APK Artifact
       - name: Download APK Artifact
         uses: actions/download-artifact@v3
         with:
-          name: io.esper.android.files.apk  # Fixed artifact name
+          name: io.esper.android.files.apk
           path: ./release-apk
 
-      # 2a. List downloaded artifacts for verification
-      - name: List Downloaded APKs
-        run: ls -l ./release-apk/
+      # 5. List downloaded APKs for verification
+      - name: List downloaded APKs
+        run: ls -la ./release-apk/
 
-      # 2b. Verify Downloaded APK Exists
+      # 6. Verify Downloaded APK Exists
       - name: Verify Downloaded APK Exists
         run: |
-          APK_PATH="./release-apk/io.esper.android.files_v${{ env.versionName }}.apk"
+          APK_PATH="./release-apk/io.esper.android.files.apk"
           if [ -f "$APK_PATH" ]; then
             echo "APK exists: $APK_PATH"
           else
@@ -54,14 +58,14 @@ jobs:
             exit 1
           fi
 
-      # 3. Create GitHub Release
+      # 7. Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ env.versionName }}"  # e.g., v1.01.0004
+          tag_name: "v${{ env.versionName }}"  # Use the version name extracted
           release_name: "Release v${{ env.versionName }}"
           body: |
             Changes in this Release:
@@ -69,13 +73,13 @@ jobs:
           draft: false
           prerelease: false
 
-      # 4. Upload Release APK
+      # 8. Upload Release APK
       - name: Upload Release APK
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release-apk/io.esper.android.files_v${{ env.versionName }}.apk
-          asset_name: io.esper.android.files_v${{ env.versionName }}.apk
+          asset_path: ./release-apk/io.esper.android.files.apk
+          asset_name: io.esper.android.files.apk
           asset_content_type: application/vnd.android.package-archive
