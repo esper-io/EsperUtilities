@@ -32,7 +32,7 @@ Below are examples of JSON configuration settings for customizable usage control
 - **First Sample JSON** (Basic File Manager availability)
     ```json
     {
-      "api_key": "mr915DuuSsM26U5hTrsxMwcNWqcf3G",
+      "api_key": "<api_key>",
       "external_root_path": "/esperfiles/",
       "internal_root_path": "/storage/emulated/0/esperfiles/",
       "app_name": "Files",
@@ -59,7 +59,7 @@ Below are examples of JSON configuration settings for customizable usage control
 - **Second Sample JSON** (Full Accesss - All features)
     ```json
     {
-      "api_key": "mr915DuuSsM26U5hTrsxMwcNWqcf3G",
+      "api_key": "<api_key>",
       "external_root_path": "/esperfiles/",
       "internal_root_path": "/storage/emulated/0/esperfiles/",
       "app_name": "Files",
