@@ -20,6 +20,7 @@ import io.esper.android.files.databinding.NetworkTesterFragmentBinding
 import io.esper.android.files.util.Constants
 import io.esper.android.files.util.GeneralUtils
 import io.esper.android.network.model.UrlAndPortItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
@@ -211,21 +212,25 @@ class NetworkTesterFragment : Fragment(), GeneralUtils.BaseStackNameCallback {
     }
 
     override fun onBaseStackNameFetched(baseStackName: String) {
-        progressBar.visibility = View.GONE
-        refreshData()
+        lifecycleScope.launch(Dispatchers.Main) {
+            progressBar.visibility = View.GONE
+            refreshData()
+        }
     }
 
     override fun onError(e: Exception) {
         Log.e(Constants.NetworkTesterFragmentTag, "Error fetching base stack name", e)
-        if (e.message?.contains("No data found") == true) {
-            Toast.makeText(context, R.string.tenant_not_available, Toast.LENGTH_LONG).show()
-            initTenant()
-        } else {
-            progressBar.visibility = View.GONE
-            Toast.makeText(context, R.string.stack_details_not_available, Toast.LENGTH_LONG).show()
-            GeneralUtils.showStackDialog(requireContext()) { stackInput ->
-                GeneralUtils.setBaseStackName(requireContext(), stackInput)
-                refreshData()
+        lifecycleScope.launch(Dispatchers.Main) {
+            if (e.message?.contains("No data found") == true) {
+                Toast.makeText(context, R.string.tenant_not_available, Toast.LENGTH_LONG).show()
+                initTenant()
+            } else {
+                progressBar.visibility = View.GONE
+                Toast.makeText(context, R.string.stack_details_not_available, Toast.LENGTH_LONG).show()
+                GeneralUtils.showStackDialog(requireContext()) { stackInput ->
+                    GeneralUtils.setBaseStackName(requireContext(), stackInput)
+                    refreshData()
+                }
             }
         }
     }
